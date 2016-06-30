@@ -16,8 +16,8 @@
     <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
     <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
     <configFile path="/etc/config" />
-    <xpos value="-200" />
-    <ypos value="-200" />
+    <xpos value="0" />
+    <ypos value="0" />
     <icon  value="/share/rcmanager/DefaultIcon.png"/>
    
   </node>

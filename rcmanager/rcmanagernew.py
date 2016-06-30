@@ -56,7 +56,9 @@ class MainClass(QtGui.QMainWindow):
 		#self.node=rcmanagerConfignew.VisualNode(self.graphTree)
 		#self.node.setIcon("share/rcmanager/DefaultIcon.png")
 		#self.node.setIpColor()
-		#self.NetworkScene.addItem(self.node)
+		self.connection=rcmanagerConfignew.NodeConnection()
+		self.NetworkScene.addItem(self.connection)
+		self.NetworkScene.addLine(0,0,-100,-100,QtGui.QPen())
 		self.setZoom()
 		self.setupActions()
 	def setupActions(self):##To setUp connection like saving,opening,etc
@@ -147,6 +149,28 @@ class MainClass(QtGui.QMainWindow):
 	def drawComponents(self):#Called to draw the components
 		for x in self.componentList.__iter__():
 			self.NetworkScene.addItem(x.graphicsItem)
+	def setConnectionItems(self):
+		for x in self.componentList.__iter__():
+			for y in self.components.dependences.__iter__():
+				try :
+					comp=self.searchforComponent(y)
+					self.setAconnection(self,x,y)
+				except Exception,e:
+					print "Error while setting connection ::"+str(e)
+	def searchforComponent(self,alias):#this will search inside the components tree
+		flag=False
+		for x in self.componentList.__iter__():
+			if x.alias==alias
+			flag=True
+			return x
+		if not flag:
+			raise Exception("No such component with alias "+alias)
+
+	def setAconnection(self,fromComponent,toComponent):#To set these two components
+			connection=rcmanagerConfignew.NodeConnection()
+			connection.toComponent=toComponent
+			connection.fromComponent=fromComponent
+			
 	def openXmlFile(self):#To open the xml files ::Unfinished
 		try:	
 			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',os.getcwd(),'*.xml')

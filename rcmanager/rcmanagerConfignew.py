@@ -63,7 +63,7 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		self.view=view
 	def boundingRect(self):
 		self.penWidth =2
-		return QtCore.QRectF(-49,-49,98,98)
+		return QtCore.QRectF(-69,-69,138,138)
 	def paint(self,painter,option=None,widget=None):
 		self.paintMainShape(painter)
 		self.drawStatus(painter)
@@ -78,49 +78,41 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		brush=QtGui.QBrush(QtGui.QColor.fromRgb(94,94,94))
 		painter.setBrush(brush)
 		painter.drawRoundedRect(-49,-49,98,98,5,5)
-		brush.setColor(QtGui.QColor.fromRgb(255,255,255))
-		painter.setBrush(brush)
+		
 		self.TextRect=QtCore.QRect(-45,-45,90,20)##The rectangle shape on which the alias name will be dispalyed
 		self.statusRect=QtCore.QRect(22,10,20,20)##The rectange shape on which the status of the node will be displayed
 		self.IconRect=QtCore.QRect(-45,-20,60,64)## The rectange shape on which the Icon will be displayed
-		#self.drawConnection(painter,"UP","INCOMMING")
-		#self.drawConnection(painter,"RIGHT","OUTGOING")
+		
+		
+		brush.setColor(QtGui.QColor.fromRgb(94,94,94))
+		self.drawUpPort(painter,brush)##Temp
+		self.drawDownPort(painter,brush)##Temp
+		self.drawRightPort(painter,brush)##Temp
+		self.drawLeftPort(painter,brush)##Temp
+		
+		brush.setColor(QtGui.QColor.fromRgb(255,255,255))
+		painter.setBrush(brush)
 		painter.drawRect(self.TextRect) ##Drawing the Alias display rectangle
 		painter.setBrush(self.IpColor)  ## Drawing the Icon display rectangle
 		painter.drawRect(self.IconRect)
 		
 		
-	def drawConnection(self,painter,edge="UP",DIRECTION="INCOMMING",dist=0):##This is used to draw the exit and entry points of connections on the node
-		if edge=="UP":
-			if DIRECTION=="INCOMMING":
-				Arrow=QtGui.QPixmap("share/rcmanager/downconnection.png")
-				painter.drawPixmap(-49+21*(dist),-69,20,20,Arrow,0,0,0,0)
-			elif DIRECTION=="OUTGOING":
-				Arrow=QtGui.QPixmap("share/rcmanager/upconnection.png")
-				painter.drawPixmap(-49+21*(dist),-69,20,20,Arrow,0,0,0,0)
-		elif edge=="DOWN":
-			if DIRECTION=="INCOMMING":
-				Arrow=QtGui.QPixmap("share/rcmanager/upconnection.png")
-				painter.drawPixmap(-49+21*(dist),49,20,20,Arrow,0,0,0,0)
-			elif DIRECTION=="OUTGOING":
-				Arrow=QtGui.QPixmap("share/rcmanager/downconnection.png	")
-				painter.drawPixmap(-49+21*(dist),49,20,20,Arrow,0,0,0,0)
-			
-		elif edge=="LEFT":
-			if DIRECTION=="INCOMMING":
-				Arrow=QtGui.QPixmap("share/rcmanager/rightconnection.png")
-				painter.drawPixmap(-69,-49+21*(dist),20,20,Arrow,0,0,0,0)
-			elif DIRECTION=="OUTGOING":
-				Arrow=QtGui.QPixmap("share/rcmanager/leftconnection.png")
-				painter.drawPixmap(-69,-49+21*(dist),20,20,Arrow,0,0,0,0)
-			
-		elif edge=="RIGHT":
-			if DIRECTION=="INCOMMING":
-				Arrow=QtGui.QPixmap("share/rcmanager/leftconnection.png")
-				painter.drawPixmap(49,-49+21*(dist),20,20,Arrow,0,0,0,0)
-			elif DIRECTION=="OUTGOING":
-				Arrow=QtGui.QPixmap("share/rcmanager/rightconnection.png")
-				painter.drawPixmap(49,-49+21*(dist),20,20,Arrow,0,0,0,0)
+	def drawUpPort(self,painter,brush):##The bulging arcs will can be calleds as the port because all connection starts from there
+		painter.setBrush(brush)
+		painter.drawChord(-10,-59,20,20,0,2880)
+	
+	def drawDownPort(self,painter,brush):
+		painter.setBrush(brush)
+		painter.drawChord(-10,39,20,20,0,-2880)
+
+	def drawRightPort(self,painter,brush):
+		painter.setBrush(brush)
+		painter.drawChord(39,-10,20,20,1440,-2880)
+
+	def drawLeftPort(self,painter,brush):
+		painter.setBrush(brush)
+		painter.drawChord(-59,-10,20,20,1440,2880)
+
 	def drawIcon(self,painter):#Draw the Icon representing the purpose and draw its 
 			painter.setBrush(self.IpColor)  ## Drawing the Icon display rectangle
 			painter.drawRect(self.IconRect)
@@ -137,6 +129,38 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 			painter.setBrush(brush)
 			painter.drawRect(self.statusRect)
 
+class NodeConnection(QtGui.QGraphicsItem):
+	def __init__(self):
+		QtGui.QGraphicsItem.__init__(self)
+		self.fromComponents=None
+		self.toComponents=None
+		self.fromX=0
+		self.fromY=0
+		self.toX=0
+		self.toY=0
+		self.color=QtGui.QColor.fromRgb(0,255,0)
+		self.pen=QtGui.QPen(self.color)
+		self.penWidth=2
+		self.pen.setWidth(self.penWidth)
+	#def shape(self):
+			
+	def boundingRect(self):##TO Be modified..Because error prone when vertical and horizontal
+		if abs(self.toX-self.fromX)<5:
+			width=5
+		else:
+			width=self.toX-self.fromX
+		if abs(self.toY-self.fromY)<5:
+			height=5
+		else:
+			height=self.toY-self.fromY
+		self.rect=QtCore.QRectF(self.fromX,self.fromY,width,height)
+		return self.rectangle
+	def paint(self,painter,option=None,widget=None):
+		painter.setPen(self.pen)
+		painter.drawLine(self.fromX,self.fromY,self.toX,self.toY)
+		#painter.drawRect(self.rect)
+
+				
 class ComponentChecker(threading.Thread):#This will check the status of components
 	def __init__(self):
 		threading.Thread.__init__(self)
@@ -213,7 +237,7 @@ class CompInfo:##This contain the general Information about the Components which
 		self.Ip=""
 		self.IconFilePath=""
 		self.status=False
-		self.CheckItem=ComponentChecker()
+		#self.CheckItem=ComponentChecker()
 		self.graphicsItem=VisualNode(parent=self)
 	def __repr__(self):
 		string = ''
@@ -479,8 +503,8 @@ def parseNode(node, components):#To get the properties of a component
 		print "error: "+str(node.name)
 	
 	comp.setGraphicsData()
-	comp.CheckItem.initializeComponent(comp)
-	comp.CheckItem.start()
+	#comp.CheckItem.initializeComponent(comp)
+	#comp.CheckItem.start()
 	print "Got information of " +comp.alias
 def parseSingleValue(node, arg, doCheck=True, optional=False):
 	if node.children != None and doCheck == True: print 'WARNING: No children expected'+str(node)
