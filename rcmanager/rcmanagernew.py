@@ -74,7 +74,7 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.BackPopUpMenu.ActionSearch,QtCore.SIGNAL("triggered(bool)"),self.searchInsideTree)
 		self.connect(self.graphTree.BackPopUpMenu.ActionAdd,QtCore.SIGNAL("triggered(bool)"),self.addNode)		
 		self.connect(self.graphTree.BackPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.setNetworkSettings)
-		self.connect(self.graphTree.CompoPopUpMenu.ActionUp,QtCore.SIGNAL("triggered(bool)"),self.upComponent)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionUp,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionDown,QtCore.SIGNAL("triggered(bool)"),self.downComponent)
 		#self.connect(self.graphTree.CompoPopUpMenu.ActionNewConnection,QtCore.SIGNAL("triggered(bool)"),self.upComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionControl,QtCore.SIGNAL("triggered(bool)"),self.controlComponent)
@@ -104,8 +104,22 @@ class MainClass(QtGui.QMainWindow):
 		print "Controlling the current component"	
 	def downComponent(self,component):#To down a particular component
 		print "Downing particular component"
-	def upComponent(self,component):#This will up a particular component
-		print "Uping particular component"
+	def upComponent(self,component):#Just Up the component
+		try:
+			proc=QtCore.QProcess()
+			proc.startDetached(component.parent.compup)
+			self.logToDisplay(component.parent.alias+" ::started")
+		except Exception, e:
+			self.logToDisplay("Cannot write"+str(e))
+			raise e
+		else:
+			pass
+		finally:
+			pass
+
+	def upSelectedComponent(self):#This will up a selected component
+		component=self.graphTree.CompoPopUpMenu.currentComponent
+		self.upComponent(component)
 	def setNetworkSettings(self):#To edit the network tree general settings
 		print "network setting editing"	
 	def searchInsideTree(self):#To search a particular component from tree
@@ -135,7 +149,7 @@ class MainClass(QtGui.QMainWindow):
 			self.NetworkScene.addItem(x.graphicsItem)
 	def openXmlFile(self):#To open the xml files ::Unfinished
 		try:	
-			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file','/home/h20/robocomp/tools/rcmanager','*.xml')
+			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',os.getcwd(),'*.xml')
 			self.componentList , self.networkSettings=rcmanagerConfignew.getConfigFromFile(self.filePath)
 			self.drawComponents() 
 			self.logToDisplay("File "+self.filePath +"  Read successfully")
