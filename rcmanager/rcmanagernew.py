@@ -56,9 +56,8 @@ class MainClass(QtGui.QMainWindow):
 		#self.node=rcmanagerConfignew.VisualNode(self.graphTree)
 		#self.node.setIcon("share/rcmanager/DefaultIcon.png")
 		#self.node.setIpColor()
-		self.connection=rcmanagerConfignew.NodeConnection()
-		self.NetworkScene.addItem(self.connection)
-		self.NetworkScene.addLine(0,0,-100,-100,QtGui.QPen())
+		#self.connection=rcmanagerConfignew.NodeConnection()
+		#self.NetworkScene.addItem(self.connection)
 		self.setZoom()
 		self.setupActions()
 	def setupActions(self):##To setUp connection like saving,opening,etc
@@ -146,39 +145,62 @@ class MainClass(QtGui.QMainWindow):
 		print "Opened tool settings"	
 	def exitRcmanager(self):##To exit the tool after doing all required process
 		print "Exiting"
-	def drawComponents(self):#Called to draw the components
+	def drawAllComponents(self):#Called to draw the components
 		for x in self.componentList.__iter__():
 			self.NetworkScene.addItem(x.graphicsItem)
-	def setConnectionItems(self):
+	
+	def drawAllConnection(self):#This will start drawing Item
 		for x in self.componentList.__iter__():
-			for y in self.components.dependences.__iter__():
+			for y in x.asBeg.__iter__():
+				self.NetworkScene.addItem(y)
+
+	def setConnectionItems(self):#This is called right after reading from a file,Sets all the connection graphicsItems
+		for x in self.componentList.__iter__():
+			for y in x.dependences.__iter__():
 				try :
 					comp=self.searchforComponent(y)
-					self.setAconnection(self,x,y)
+					self.setAconnection(x,comp)
+					self.logToDisplay("Connection from "+x.alias+" to "+comp.alias+" Set")
 				except Exception,e:
 					print "Error while setting connection ::"+str(e)
 	def searchforComponent(self,alias):#this will search inside the components tree
 		flag=False
 		for x in self.componentList.__iter__():
-			if x.alias==alias
-			flag=True
-			return x
+			if x.alias==alias:
+				flag=True
+				return x
 		if not flag:
 			raise Exception("No such component with alias "+alias)
 
+	
 	def setAconnection(self,fromComponent,toComponent):#To set these two components
-			connection=rcmanagerConfignew.NodeConnection()
-			connection.toComponent=toComponent
-			connection.fromComponent=fromComponent
-			
+		
+		connection=rcmanagerConfignew.NodeConnection()
+		
+		connection.toComponent=toComponent
+		connection.fromComponent=fromComponent
+		
+		fromComponent.asBeg.append(connection)
+		toComponent.asEnd.append(connection)
+		
+		fromComponentPort,toComponentPort=rcmanagerConfignew.findWhichPorts(fromComponent,toComponent)
+		
+		connection.fromX,connection.fromY=rcmanagerConfignew.findPortPosition(fromComponent,fromComponentPort)
+		connection.toX,connection.toY=rcmanagerConfignew.findPortPosition(toComponent,toComponentPort)	
+
+	
 	def openXmlFile(self):#To open the xml files ::Unfinished
-		try:	
+		self.networkSettings=rcmanagerConfignew.getDefaultValues()
+		del self.componentList[:]
+		try:
 			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',os.getcwd(),'*.xml')
 			self.componentList , self.networkSettings=rcmanagerConfignew.getConfigFromFile(self.filePath)
-			self.drawComponents() 
+			self.drawAllComponents()
+			self.setConnectionItems()
+			self.drawAllConnection()
 			self.logToDisplay("File "+self.filePath +"  Read successfully")
-		except:
-			self.logToDisplay("Opening File Failed",QtGui.QColor.fromRgb(255,0,0))
+		except Exception,e:
+			self.logToDisplay("Opening File Failed::"+str(e),QtGui.QColor.fromRgb(255,0,0))
 	def saveXmlFile(self):##To save the entire treesetting into a xml file::Unfinished
 		try:
 			saveFileName=QtGui.QFileDialog.getSaveFileName(self,'Save File','/home/h20','*.xml')

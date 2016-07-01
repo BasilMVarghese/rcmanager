@@ -57,6 +57,29 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		self.IpColor=None
 		self.aliveStatus=False
 		self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+		self.setZValue(1)#To make sure the Nodes are always on top of connections
+	def mouseMoveEvent(self,event):
+		QtGui.QGraphicsItem.mouseMoveEvent(self,event)
+		self.updateforDrag()
+
+	def updateforDrag(self):
+		for x in self.parent.asBeg.__iter__():
+			end=x.toComponent
+			a,b=findWhichPorts(self.parent,end)
+			x.fromX,x.fromY=findPortPosition(self.parent,a)
+			x.toX,x.toY=findPortPosition(end,b)
+			x.prepareGeometryChange()
+		for x in self.parent.asEnd.__iter__():
+			beg=x.fromComponent
+			a,b=findWhichPorts(beg,self.parent)
+			x.fromX,x.fromY=findPortPosition(beg,a)
+			x.toX,x.toY=findPortPosition(self.parent,b)
+			x.prepareGeometryChange()
+		self.scene().update()
+	def mouseReleaseEvent(self,event):
+		QtGui.QGraphicsItem.mouseReleaseEvent(self,event)
+		self.updateforDrag(	)
+
 	def setIpColor(self,color=QtGui.QColor.fromRgb(0,255,0)):#To set the Ipcolor
 		self.IpColor=color
 	def setview(view):
@@ -114,11 +137,11 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		painter.drawChord(-59,-10,20,20,1440,2880)
 
 	def drawIcon(self,painter):#Draw the Icon representing the purpose and draw its 
-			painter.setBrush(self.IpColor)  ## Drawing the Icon display rectangle
-			painter.drawRect(self.IconRect)
-			painter.drawPixmap(-45,-20,60,60,self.Icon,0,0,0,0)
+		painter.setBrush(self.IpColor)  ## Drawing the Icon display rectangle
+		painter.drawRect(self.IconRect)
+		painter.drawPixmap(-45,-20,60,60,self.Icon,0,0,0,0)
 	def writeAlias(self,painter):##Draw the alias
-			painter.drawText(self.TextRect,1," "+self.Alias) 	##Drawing the Alias name
+		painter.drawText(self.TextRect,1," "+self.Alias) 	##Drawing the Alias name
 	def drawStatus(self,painter):
 		if self.parent.status:
 			brush=QtGui.QBrush(QtGui.QColor.fromRgb(0,255,0)) ##Drawing the Status display rectangle
@@ -129,11 +152,57 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 			painter.setBrush(brush)
 			painter.drawRect(self.statusRect)
 
+def findPortPosition(Component,Port):#PORT can be "U"or "D" or "R" or "L"
+		ItemPoint=QtCore.QPointF()
+		if Port=="U":
+			ItemPoint.setX(0)
+			ItemPoint.setY(-54)
+			X=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).x()
+			Y=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).y()
+			return X,Y
+		elif Port=="D":
+			ItemPoint.setX(0)
+			ItemPoint.setY(54)
+			X=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).x()
+			Y=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).y()
+			return X,Y
+		elif Port=="R":
+			ItemPoint.setX(54)
+			ItemPoint.setY(0)
+			X=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).x()
+			Y=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).y()
+			return X,Y	
+		elif Port=="L":
+			ItemPoint.setX(-54)
+			ItemPoint.setY(0)
+			X=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).x()
+			Y=QtGui.QGraphicsItem.mapToScene(Component.graphicsItem,ItemPoint).y()
+			return X,Y
+
+
+def findWhichPorts(fromComponent,toComponent):#This will select out of the 4 ports which have to be connected to connection		
+		
+		a=fromComponent.graphicsItem.mapToScene(QtCore.QPointF())
+		b=toComponent.graphicsItem.mapToScene(QtCore.QPointF())
+
+		Line=QtCore.QLineF(b,a)
+		
+		angle=Line.angle()
+		#print angle
+		if angle<=45 or angle >315:
+			return "L","R"
+		elif angle>45 and angle<=135:
+			return "D","U"
+		elif angle>135 and angle <=225:
+			return "R","L"
+		elif angle>225 and angle <=315:
+			return "U","D"
+
 class NodeConnection(QtGui.QGraphicsItem):
 	def __init__(self):
 		QtGui.QGraphicsItem.__init__(self)
-		self.fromComponents=None
-		self.toComponents=None
+		self.fromComponent=None
+		self.toComponent=None
 		self.fromX=0
 		self.fromY=0
 		self.toX=0
@@ -142,8 +211,10 @@ class NodeConnection(QtGui.QGraphicsItem):
 		self.pen=QtGui.QPen(self.color)
 		self.penWidth=2
 		self.pen.setWidth(self.penWidth)
-	#def shape(self):
-			
+		self.setBoundingRegionGranularity(0.9)
+		self.Line=None
+		self.fromPoint=QtCore.QPointF()
+		self.toPoint=QtCore.QPointF()	
 	def boundingRect(self):##TO Be modified..Because error prone when vertical and horizontal
 		if abs(self.toX-self.fromX)<5:
 			width=5
@@ -154,12 +225,19 @@ class NodeConnection(QtGui.QGraphicsItem):
 		else:
 			height=self.toY-self.fromY
 		self.rect=QtCore.QRectF(self.fromX,self.fromY,width,height)
-		return self.rectangle
+		return self.rect
 	def paint(self,painter,option=None,widget=None):
 		painter.setPen(self.pen)
-		painter.drawLine(self.fromX,self.fromY,self.toX,self.toY)
+		self.fromPoint.setX(self.fromX)
+		self.fromPoint.setY(self.fromY)
+		self.toPoint.setX(self.toX)
+		self.toPoint.setY(self.toY)
+		self.Line=QtCore.QLineF(self.fromPoint,self.toPoint)
+		painter.drawLine(self.Line)
 		#painter.drawRect(self.rect)
-
+	def drawarrows(self,painter):#To draw the arrows in the connections::Unfinished
+		cener=(self.fromPoint+self.toPoint)/2
+#	self.Line
 				
 class ComponentChecker(threading.Thread):#This will check the status of components
 	def __init__(self):
@@ -200,9 +278,9 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 					self.changed()
 				self.alive = False
 				self.mutex.unlock()
-			self.mutex.lock()
-			print self.component.alias +" ::Status:: "+ str(self.alive)
-			self.mutex.unlock()
+			#self.mutex.lock()
+			#print self.component.alias +" ::Status:: "+ str(self.alive)
+			#self.mutex.unlock()
 			time.sleep(0.5)
 	def reset(self):
 		self.mutex.lock()
@@ -225,6 +303,8 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 #
 class CompInfo:##This contain the general Information about the Components which is read from the files and created
 	def __init__(self):
+		self.asEnd=[]#This is the list of connection where the node act as the ending point
+		self.asBeg=[]#This is the list of connection where the node act as the beginning point
 		self.endpoint = ''
 		self.workingdir = ''
 		self.compup = ''
@@ -237,7 +317,7 @@ class CompInfo:##This contain the general Information about the Components which
 		self.Ip=""
 		self.IconFilePath=""
 		self.status=False
-		#self.CheckItem=ComponentChecker()
+		self.CheckItem=ComponentChecker()
 		self.graphicsItem=VisualNode(parent=self)
 	def __repr__(self):
 		string = ''
@@ -258,12 +338,13 @@ class CompInfo:##This contain the general Information about the Components which
 
 class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to draw the graphtree 
 	def __init__(self,parent,mainclass):
+		self.viewportAnchor=QtGui.QGraphicsView.AnchorUnderMouse
 		QtGui.QGraphicsView.__init__(self,parent)
 		self.mainclass=mainclass#This object is the mainClass from rcmanager Module
 		self.CompoPopUpMenu=ComponentMenu(self)
 		self.BackPopUpMenu=BackgroundMenu(self)
 	def wheelEvent(self,wheel):
-		#self.setTransformationAnchor(self.AnchorUnderMouse)
+		QtGui.QGraphicsView.wheelEvent(self,wheel)
 		temp=self.mainclass.currentZoom
 		temp+=(wheel.delta()/120)
 		self.mainclass.UI.verticalSlider.setValue(temp)
@@ -503,8 +584,8 @@ def parseNode(node, components):#To get the properties of a component
 		print "error: "+str(node.name)
 	
 	comp.setGraphicsData()
-	#comp.CheckItem.initializeComponent(comp)
-	#comp.CheckItem.start()
+	comp.CheckItem.initializeComponent(comp)
+	comp.CheckItem.start()
 	print "Got information of " +comp.alias
 def parseSingleValue(node, arg, doCheck=True, optional=False):
 	if node.children != None and doCheck == True: print 'WARNING: No children expected'+str(node)

@@ -22,6 +22,55 @@
    
   </node>
 
-  
-  
+
+  <node alias="Item2" endpoint="CommonBehavior.Endpoints:tcp -p 1">
+    
+    <dependence alias="Item1"/>
+    <workingDir path="/home/robocomp/" />
+    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
+    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
+    <configFile path="/etc/config" />
+    <xpos value="200" />
+    <ypos value="-200" />
+    <icon  value="/share/rcmanager/DefaultIcon.png"/>
+  </node>
+
+   <node alias="Item3" endpoint="CommonBehavior.Endpoints:tcp -p 1">
+    
+    <dependence alias="Item1"/>
+    <workingDir path="/home/robocomp/" />
+    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
+    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
+    <configFile path="/etc/config" />
+    <xpos value="-200" />
+    <ypos value="-200" />
+    <icon  value="/share/rcmanager/DefaultIcon.png"/>
+   
+  </node>
+
+<node alias="Item4" endpoint="CommonBehavior.Endpoints:tcp -p 1">
+    
+    <dependence alias="Item1"/>
+    <workingDir path="/home/robocomp/" />
+    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
+    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
+    <configFile path="/etc/config" />
+    <xpos value="-200" />
+    <ypos value="200" />
+    <icon  value="/share/rcmanager/DefaultIcon.png"/>
+   
+  </node>
+
+  <node alias="Item5" endpoint="CommonBehavior.Endpoints:tcp -p 1">
+    
+    <dependence alias="Item1"/>
+    <workingDir path="/home/robocomp/" />
+    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
+    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
+    <configFile path="/etc/config" />
+    <xpos value="200" />
+    <ypos value="-200" />
+    <icon  value="/share/rcmanager/DefaultIcon.png"/>
+   
+  </node>  
 </rcmanager>   
