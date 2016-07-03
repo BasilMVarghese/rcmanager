@@ -76,8 +76,8 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.BackPopUpMenu.ActionAdd,QtCore.SIGNAL("triggered(bool)"),self.addNode)		
 		self.connect(self.graphTree.BackPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.setNetworkSettings)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionUp,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
-		self.connect(self.graphTree.CompoPopUpMenu.ActionDown,QtCore.SIGNAL("triggered(bool)"),self.downComponent)
-		#self.connect(self.graphTree.CompoPopUpMenu.ActionNewConnection,QtCore.SIGNAL("triggered(bool)"),self.upComponent)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionDown,QtCore.SIGNAL("triggered(bool)"),self.downSelectedComponent)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionNewConnection,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionControl,QtCore.SIGNAL("triggered(bool)"),self.controlComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.componentSettings)
 		self.logToDisplay("Tool Started")
@@ -102,14 +102,27 @@ class MainClass(QtGui.QMainWindow):
 	def componentSettings(self,component):#To edit the settings of currentComponent
 		print "Settings of current component"
 	def controlComponent(self,component):#To open up the control panel of current component
-		print "Controlling the current component"	
+		print "Controlling the current component"
+	def downSelectedComponent(self):
+		component=self.graphTree.CompoPopUpMenu.currentComponent
+		self.downComponent(component.parent)
 	def downComponent(self,component):#To down a particular component
-		print "Downing particular component"
+		try:
+			proc=QtCore.QProcess()
+			proc.startDetached(component.compdown)
+			self.logToDisplay(component.alias+" ::Killed")
+		except Exception, e:
+			self.logToDisplay("Cannot Kill"+str(e))
+			raise e
+		else:
+			pass
+		finally:
+			pass
 	def upComponent(self,component):#Just Up the component
 		try:
 			proc=QtCore.QProcess()
-			proc.startDetached(component.parent.compup)
-			self.logToDisplay(component.parent.alias+" ::started")
+			proc.startDetached(component.compup)
+			self.logToDisplay(component.alias+" ::started")
 		except Exception, e:
 			self.logToDisplay("Cannot write"+str(e))
 			raise e
@@ -126,9 +139,17 @@ class MainClass(QtGui.QMainWindow):
 	def searchInsideTree(self):#To search a particular component from tree
 		print "Searching inside the tree"
 	def upAllComponents(self):#To set all components in up position
-		print "UPING ALL"
+		for x in self.componentList.__iter__():
+			try:
+				self.upComponent(x)
+			except Exception, e:
+				pass
 	def downAllComponents(self):#To set all components in down position
-		print "Down All"
+		for x in self.componentList.__iter__():
+			try:
+				self.downComponent(x)
+			except Exception,e :
+				pass
 	def drawfromfile(self,nodelist):#To be called when a new tree have to be drawn which was directly read from file
 		pass
 	def simulatorSettings(self):##To edit the simulatorSettings:Unfinished

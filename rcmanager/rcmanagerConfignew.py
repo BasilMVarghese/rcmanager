@@ -256,15 +256,14 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 			self.aPrx = ic.stringToProxy(self.component.endpoint)
 			self.aPrx.ice_timeout(1)
 		except:
-			print "Error creating proxy to " + endpoint
-			if len(endpoint) == 0:
+			print "Error creating proxy to " + self.component.endpoint
+			if len(self.component.endpoint) == 0:
 				print 'please, provide an endpoint'
 			raise
 
 	def run(self):
 		global global_ic
 		while self.exit == False:
-			
 			try:
 				self.aPrx.ice_ping()
 				self.mutex.lock()
@@ -294,7 +293,7 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 	def stop(self):
 		self.exit = True
 	def runrun(self):
-		if not self.isAlive(): self.start()
+		if not self.isAlive(): self.start()#Note this is different isalive
 	def changed(self):
 		self.component.status=not self.alive
 		self.component.graphicsItem.update()
@@ -350,13 +349,15 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 		self.mainclass.UI.verticalSlider.setValue(temp)
 		self.mainclass.graphZoom()
 	def contextMenuEvent(self,event):##It will select what kind of context menu should be displayed
+		GloPos=event.globalPos()
 		pos=event.pos()
 		item=self.itemAt(pos)
+		#print pos#TEMP
 		if item:
 			self.CompoPopUpMenu.setComponent(item)
-			self.CompoPopUpMenu.popup(pos)
+			self.CompoPopUpMenu.popup(GloPos)
 		else:
-			self.BackPopUpMenu.popup(pos)
+			self.BackPopUpMenu.popup(GloPos)
 
 
 
