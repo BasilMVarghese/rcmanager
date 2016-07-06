@@ -40,6 +40,8 @@ except AttributeError:
     def _fromUtf8(s):
         return s
 
+initDir=os.getcwd()
+
 class MainClass(QtGui.QMainWindow):
 	"""docstring for MainClass"""
 	def __init__(self, arg=None):
@@ -55,6 +57,7 @@ class MainClass(QtGui.QMainWindow):
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
 		self.setZoom()
 		self.setupActions()
+		#print "Count is "+ str(self.UI.verticalLayout.count())
 	def setupActions(self):##To setUp connection like saving,opening,etc
 		self.connect(self.UI.actionSave,QtCore.SIGNAL("triggered(bool)"),self.saveXmlFile)
 		self.connect(self.UI.actionOpen,QtCore.SIGNAL("triggered(bool)"),self.openXmlFile)
@@ -75,7 +78,25 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.CompoPopUpMenu.ActionNewConnection,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionControl,QtCore.SIGNAL("triggered(bool)"),self.controlComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.componentSettings)
+		self.connect(self.UI.toolButton_2,QtCore.SIGNAL("clicked()"),self.searchEnteredAlias)
 		self.logToDisplay("Tool Started")
+
+	def searchEnteredAlias(self):#Called when we type an alias and search it
+		try:
+			alias=self.UI.lineEdit.text()
+			if alias== '':
+				raise Exception("No Name Entered")
+				
+			else :
+				self.searchforComponent(alias)
+				
+			self.logToDisplay(alias+"  Found")
+		except Exception, e:
+			self.logToDisplay("Search Error::  "+ str(e),"R")
+		else:
+			pass
+		finally:
+			pass
 	def ipclassify(self):#To find all the computer present
 		self.ipList=[]##Ip listed from the xml file
 		for x in self.componentList.__iter__():
@@ -89,8 +110,16 @@ class MainClass(QtGui.QMainWindow):
 	def setAllIpColor(self):
 		diff=int(655/self.ipList().__le__())
 
-				
-	def logToDisplay(self,text=" ",color=QtGui.QColor.fromRgb(24,149,99)):#To log into the textEdit widget
+	def setDirectoryItems(self):#This will set and draw all the directory components
+		for x in self.componentList.__iter__():				
+			x.DirectoryItem.setParent(self.UI.scrollAreaWidgetContents)
+			self.UI.verticalLayout.insertWidget(self.UI.verticalLayout.count()-1,x.DirectoryItem)
+		#print "Count is "+ str(self.UI.verticalLayout.count())
+	def logToDisplay(self,text=" ",arg="G"):#To log into the textEdit widget
+		if arg=="G":
+			color=QtGui.QColor.fromRgb(0,255,0)
+		elif arg=="R":
+			color=QtGui.QColor.fromRgb(255,0,0)
 		time=strftime("%Y-%m-%d %H:%M:%S", localtime())
 		self.UI.textBrowser.setTextColor(color)
 		self.UI.textBrowser.append(time +"  >>  "+ text)
@@ -107,7 +136,7 @@ class MainClass(QtGui.QMainWindow):
 			proc.startDetached(component.compdown)
 			self.logToDisplay(component.alias+" ::Killed")
 		except Exception, e:
-			self.logToDisplay("Cannot Kill"+str(e))
+			self.logToDisplay("Cannot Kill"+str(e),"R")
 			raise e
 		else:
 			pass
@@ -119,7 +148,7 @@ class MainClass(QtGui.QMainWindow):
 			proc.startDetached(component.compup)
 			self.logToDisplay(component.alias+" ::started")
 		except Exception, e:
-			self.logToDisplay("Cannot write"+str(e))
+			self.logToDisplay("Cannot write"+str(e),"R")
 			raise e
 		else:
 			pass
@@ -204,26 +233,43 @@ class MainClass(QtGui.QMainWindow):
 		connection.fromX,connection.fromY=rcmanagerConfignew.findPortPosition(fromComponent,fromComponentPort)
 		connection.toX,connection.toY=rcmanagerConfignew.findPortPosition(toComponent,toComponentPort)	
 
-	
+	def removeAllComponents(self):#This removes all the components from everywhere
+		for x in self.componentList.__iter__():
+			self.NetworkScene.removeItem(x.graphicsItem)
+			self.UI.verticalLayout.removeWidget(x.DirectoryItem)
+			for y in x.asBeg.__iter__():
+				self.NetworkScene.removeItem(y)
+
 	def openXmlFile(self):#To open the xml files ::Unfinished
-		self.networkSettings=rcmanagerConfignew.getDefaultValues()
-		del self.componentList[:]
+		Settings=rcmanagerConfignew.getDefaultValues()
+		List=[]
 		try:
-			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',os.getcwd(),'*.xml')
-			self.componentList , self.networkSettings=rcmanagerConfignew.getConfigFromFile(self.filePath)
-			self.drawAllComponents()
-			self.setConnectionItems()
-			self.drawAllConnection()
-			self.logToDisplay("File "+self.filePath +"  Read successfully")
+			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',initDir,'*.xml')
+			List , Settings=rcmanagerConfignew.getConfigFromFile(self.filePath)			
+			
 		except Exception,e:
-			self.logToDisplay("Opening File Failed::"+str(e),QtGui.QColor.fromRgb(255,0,0))
+			self.logToDisplay("Opening File Failed::"+str(e),"R")
+		else:
+			self.removeAllComponents()
+			self.networkSettings=rcmanagerConfignew.getDefaultValues()
+			del self.componentList[:]
+			self.networkSettings=Settings
+			self.componentList=List
+			try :
+				self.drawAllComponents()
+				self.setConnectionItems()
+				self.drawAllConnection()
+				self.setDirectoryItems()
+				self.logToDisplay("File "+self.filePath +"  Read successfully")		
+			except Exception,e:
+				self.logToDisplay("Opening File Failed::"+str(e),"R")
 	def saveXmlFile(self):##To save the entire treesetting into a xml file::Unfinished
 		try:
 			saveFileName=QtGui.QFileDialog.getSaveFileName(self,'Save File','/home/h20','*.xml')
 			rcmanagerConfignew.writeConfigToFile(self.networkSettings,self.componentList,saveFileName)
 			self.logToDisplay("Saved to File "+saveFileName+" ::SuccessFull")
 		except:
-			self.logToDisplay("Saving to File"+saveFileName+" ::Failed",QtGui.QColor.fromRgb(255,0,0))
+			self.logToDisplay("Saving to File"+saveFileName+" ::Failed","R")
 	def setZoom(self): ##To connect the slider motion to zooming
 		self.UI.verticalSlider.setRange(-20,20)
 		self.UI.verticalSlider.setTickInterval(1)

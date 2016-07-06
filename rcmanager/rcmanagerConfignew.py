@@ -26,7 +26,7 @@
 
 
 # Importamos el modulo libxml2
-import libxml2, sys,threading,Ice ,time
+import libxml2, sys,threading,Ice ,time,os
 from PyQt4 import QtCore, QtGui, Qt
 filePath = 'rcmanager.xml'
 
@@ -341,8 +341,8 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 		self.viewportAnchor=QtGui.QGraphicsView.AnchorUnderMouse
 		QtGui.QGraphicsView.__init__(self,parent)
 		self.mainclass=mainclass#This object is the mainClass from rcmanager Module
-		self.CompoPopUpMenu=ComponentMenu(self)
-		self.BackPopUpMenu=BackgroundMenu(self)
+		self.CompoPopUpMenu=ComponentMenu(self.mainclass)
+		self.BackPopUpMenu=BackgroundMenu(self.mainclass)
 	def wheelEvent(self,wheel):
 		QtGui.QGraphicsView.wheelEvent(self,wheel)
 		temp=self.mainclass.currentZoom
@@ -369,9 +369,13 @@ class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the
 	
 class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most side of the software
 
-	def __init__(self,args):
+	def __init__(self,args=None):
 		QtGui.QPushButton.__init__(self,args)
 		self.args=args
+	def setIcon(self,arg):
+		self.Icon=QtGui.QIcon()
+		self.Icon.addPixmap(arg)
+		QtGui.QPushButton.setIcon(self,self.Icon)
 
 
 class ComponentMenu(QtGui.QMenu):
@@ -500,7 +504,7 @@ def parseClicks(node, dict):##Called from parseGeneralInformation function
 	checkForMoreProperties(node)
 	if dict.has_key('switch'): dict['switch'] = float(dict['switch'])
 	if dict.has_key('interval'): dict['interval'] = float(dict['interval'])
-def parseGraph(node, dict):##Called from parseGeneralInformation function
+def parseGraph(node, dict):##Called fpushButtonrom parseGeneralInformation function
 	parseGeneralValues(node, dict, ['alpha', 'active', 'scale'])
 	checkForMoreProperties(node)
 	if dict.has_key('alpha'): dict['alpha'] = float(dict['alpha'])
@@ -685,6 +689,7 @@ def writeConfigToFile(dict, components, path):
 		writeToFile(file, '\t\t<configFile path="' + comp.configFile + '" />')
 		writeToFile(file, '\t\t<xpos value="' + str(comp.x) + '" />')
 		writeToFile(file, '\t\t<ypos value="' + str(comp.y) + '" />')
+		writeToFile(file, '\t\t<icon value="'+str(comp.IconFilePath)+'"/>')
 		writeToFile(file, '\t</node>\n')
 
 	writeToFile(file, '</rcmanager>')
