@@ -318,6 +318,7 @@ class CompInfo:##This contain the general Information about the Components which
 		self.status=False
 		self.CheckItem=ComponentChecker()
 		self.graphicsItem=VisualNode(parent=self)
+		self.DirectoryItem=DirectoryItem()
 	def __repr__(self):
 		string = ''
 		string = string + '[' + self.alias + ']:\n'
@@ -366,6 +367,11 @@ class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the
 		QtGui.QGraphicsScene.__init__(self)
 		self.arg=arg
 	
+class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most side of the software
+
+	def __init__(self,args):
+		QtGui.QPushButton.__init__(self,args)
+		self.args=args
 
 
 class ComponentMenu(QtGui.QMenu):
@@ -533,6 +539,7 @@ def parseNode(node, components):#To get the properties of a component
 		comp = CompInfo()
 		print "Started reading components"
 		comp.alias = parseSingleValue(node, 'alias', False)
+		comp.DirectoryItem.setText(comp.alias)
 		comp.endpoint = parseSingleValue(node, 'endpoint', False)
 		mandatory = 0
 		block_optional = 0
@@ -602,14 +609,16 @@ def parseIcon(node, comp):
 	try:
 		icon=QtGui.QPixmap(x)
 		comp.graphicsItem.setIcon(icon)
+		comp.DirectoryItem.setIcon(icon)
 		comp.IconFilePath=x
 		if icon.isNull():
 			raise NameError("Wrong file Path Given on item")
 	except:
 		print "Icon file path incorrect>>Icon set to default Value"     
-		comp.IconFilePath="/home/h20/robocomp/tools/rcmanager/share/rcmanager/1465594390_sign-add.png" #THis is the default icon can be changed by users choice
+		comp.IconFilePath=os.getcwd()+"/share/rcmanager/1465594390_sign-add.png" #THis is the default icon can be changed by users choice
 		icon=QtGui.QPixmap(comp.IconFilePath)
 		comp.graphicsItem.setIcon(icon)
+		comp.DirectoryItem.setIcon(icon)
 
 def writeConfigToFile(dict, components, path):
 	try:

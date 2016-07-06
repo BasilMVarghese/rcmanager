@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'rcmanagerUItemplate.ui'
 #
-# Created: Thu Jun 23 16:57:31 2016
+# Created: Mon Jul  4 00:06:57 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -136,7 +136,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
         self.scrollAreaWidgetContents = QtGui.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 297, 227))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 297, 207))
         self.scrollAreaWidgetContents.setObjectName(_fromUtf8("scrollAreaWidgetContents"))
         self.verticalLayout = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))

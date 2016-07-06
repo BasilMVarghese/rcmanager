@@ -53,11 +53,6 @@ class MainClass(QtGui.QMainWindow):
 		self.graphTree.setScene(self.NetworkScene)
 		self.graphTree.setObjectName(_fromUtf8("graphicsView"))
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
-		#self.node=rcmanagerConfignew.VisualNode(self.graphTree)
-		#self.node.setIcon("share/rcmanager/DefaultIcon.png")
-		#self.node.setIpColor()
-		#self.connection=rcmanagerConfignew.NodeConnection()
-		#self.NetworkScene.addItem(self.connection)
 		self.setZoom()
 		self.setupActions()
 	def setupActions(self):##To setUp connection like saving,opening,etc
@@ -133,7 +128,7 @@ class MainClass(QtGui.QMainWindow):
 
 	def upSelectedComponent(self):#This will up a selected component
 		component=self.graphTree.CompoPopUpMenu.currentComponent
-		self.upComponent(component)
+		self.upComponent(component.parent)
 	def setNetworkSettings(self):#To edit the network tree general settings
 		print "network setting editing"	
 	def searchInsideTree(self):#To search a particular component from tree
