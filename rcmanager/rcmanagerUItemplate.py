@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'rcmanagerUItemplate.ui'
 #
-# Created: Wed Jul  6 23:25:21 2016
+# Created: Thu Jul  7 17:03:06 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -38,6 +38,9 @@ class Ui_MainWindow(object):
         self.tab.setObjectName(_fromUtf8("tab"))
         self.gridLayout_4 = QtGui.QGridLayout(self.tab)
         self.gridLayout_4.setObjectName(_fromUtf8("gridLayout_4"))
+        self.tabWidget_2 = QtGui.QTabWidget(self.tab)
+        self.tabWidget_2.setObjectName(_fromUtf8("tabWidget_2"))
+        self.gridLayout_4.addWidget(self.tabWidget_2, 0, 0, 1, 1)
         self.tabWidget.addTab(self.tab, _fromUtf8(""))
         self.tab_3 = QtGui.QWidget()
         self.tab_3.setObjectName(_fromUtf8("tab_3"))
@@ -136,7 +139,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName(_fromUtf8("scrollArea"))
         self.scrollAreaWidgetContents = QtGui.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 220, 154))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 249, 212))
         self.scrollAreaWidgetContents.setObjectName(_fromUtf8("scrollAreaWidgetContents"))
         self.verticalLayout = QtGui.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
@@ -167,12 +170,6 @@ class Ui_MainWindow(object):
         self.toolButton.setIcon(icon3)
         self.toolButton.setObjectName(_fromUtf8("toolButton"))
         self.horizontalLayout.addWidget(self.toolButton)
-        self.toolButton_4 = QtGui.QToolButton(self.widget)
-        icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465608670_minus.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.toolButton_4.setIcon(icon4)
-        self.toolButton_4.setObjectName(_fromUtf8("toolButton_4"))
-        self.horizontalLayout.addWidget(self.toolButton_4)
         spacerItem2 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem2)
         self.gridLayout_6.addLayout(self.horizontalLayout, 0, 0, 1, 1)
@@ -180,14 +177,14 @@ class Ui_MainWindow(object):
         self.dockWidget_2.setWidget(self.dockWidgetContents_2)
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.dockWidget_2)
         self.actionOpen = QtGui.QAction(MainWindow)
-        icon5 = QtGui.QIcon()
-        icon5.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465393728_open-file.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionOpen.setIcon(icon5)
+        icon4 = QtGui.QIcon()
+        icon4.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465393728_open-file.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionOpen.setIcon(icon4)
         self.actionOpen.setObjectName(_fromUtf8("actionOpen"))
         self.actionSave = QtGui.QAction(MainWindow)
-        icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465394415_floppy.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionSave.setIcon(icon6)
+        icon5 = QtGui.QIcon()
+        icon5.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465394415_floppy.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionSave.setIcon(icon5)
         self.actionSave.setObjectName(_fromUtf8("actionSave"))
         self.actionEdit = QtGui.QAction(MainWindow)
         self.actionEdit.setObjectName(_fromUtf8("actionEdit"))
@@ -196,9 +193,9 @@ class Ui_MainWindow(object):
         self.actionExit = QtGui.QAction(MainWindow)
         self.actionExit.setObjectName(_fromUtf8("actionExit"))
         self.actionSetting = QtGui.QAction(MainWindow)
-        icon7 = QtGui.QIcon()
-        icon7.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465394550_Settings.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.actionSetting.setIcon(icon7)
+        icon6 = QtGui.QIcon()
+        icon6.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465394550_Settings.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.actionSetting.setIcon(icon6)
         self.actionSetting.setObjectName(_fromUtf8("actionSetting"))
         self.actionSetting_2 = QtGui.QAction(MainWindow)
         self.actionSetting_2.setObjectName(_fromUtf8("actionSetting_2"))
@@ -247,6 +244,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
+        self.tabWidget_2.setCurrentIndex(-1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -266,7 +264,6 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "Log", None))
         self.toolButton_2.setText(_translate("MainWindow", "...", None))
         self.toolButton.setText(_translate("MainWindow", "...", None))
-        self.toolButton_4.setText(_translate("MainWindow", "...", None))
         self.actionOpen.setText(_translate("MainWindow", "Open", None))
         self.actionOpen.setShortcut(_translate("MainWindow", "Ctrl+O", None))
         self.actionSave.setText(_translate("MainWindow", "Save", None))

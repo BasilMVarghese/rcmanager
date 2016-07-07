@@ -19,7 +19,7 @@
     <xpos value="0" />
     <ypos value="0" />
     <icon  value="/share/rcmanager/DefaultIcon.png"/>
-   
+    <ip value="127.0.0.1"/>
   </node>
 
 
@@ -33,6 +33,7 @@
     <xpos value="200" />
     <ypos value="-200" />
     <icon  value="/share/rcmanager/DefaultIcon.png"/>
+    <ip value="127.0.0.1"/>
   </node>
 
    <node alias="Item3" endpoint="CommonBehavior.Endpoints:tcp -p 1">
@@ -45,7 +46,7 @@
     <xpos value="-200" />
     <ypos value="-200" />
     <icon  value="/share/rcmanager/DefaultIcon.png"/>
-   
+   <ip value="127.9.0.1"/>
   </node>
 
 <node alias="Item4" endpoint="CommonBehavior.Endpoints:tcp -p 1">
@@ -58,7 +59,7 @@
     <xpos value="-200" />
     <ypos value="200" />
     <icon  value="/share/rcmanager/DefaultIcon.png"/>
-   
+    <ip value="12.5.2.6"/>
   </node>
 
   <node alias="Item5" endpoint="CommonBehavior.Endpoints:tcp -p 1">
@@ -71,6 +72,6 @@
     <xpos value="200" />
     <ypos value="-200" />
     <icon  value="/share/rcmanager/DefaultIcon.png"/>
-   
+    <ip value="127.1.8.1"/>
   </node>  
 </rcmanager>   

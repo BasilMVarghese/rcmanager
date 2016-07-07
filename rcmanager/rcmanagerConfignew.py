@@ -57,6 +57,7 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		self.IpColor=None
 		self.aliveStatus=False
 		self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+		#self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
 		self.setZValue(1)#To make sure the Nodes are always on top of connections
 	def mouseMoveEvent(self,event):
 		QtGui.QGraphicsItem.mouseMoveEvent(self,event)
@@ -297,6 +298,12 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 	def changed(self):
 		self.component.status=not self.alive
 		self.component.graphicsItem.update()
+
+class ComponentController():##This contains the GUI and internal process regarding the controlling of the a particular component.
+	def __init__(self,parent=None):
+		self.Display=QtGui.QTextEdit()
+		self.Process=QtCore.QProcess()
+
 #		
 # Component information container class.
 #
@@ -318,7 +325,8 @@ class CompInfo:##This contain the general Information about the Components which
 		self.status=False
 		self.CheckItem=ComponentChecker()
 		self.graphicsItem=VisualNode(parent=self)
-		self.DirectoryItem=DirectoryItem()
+		self.DirectoryItem=DirectoryItem(parent=self)
+		#self.Controller=ComponentController(parent=self)
 	def __repr__(self):
 		string = ''
 		string = string + '[' + self.alias + ']:\n'
@@ -344,6 +352,8 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 		self.CompoPopUpMenu=ComponentMenu(self.mainclass)
 		self.BackPopUpMenu=BackgroundMenu(self.mainclass)
 	def wheelEvent(self,wheel):
+		pos=self.mapToScene(wheel.pos())
+		self.centerOn(pos)
 		QtGui.QGraphicsView.wheelEvent(self,wheel)
 		temp=self.mainclass.currentZoom
 		temp+=(wheel.delta()/120)
@@ -369,8 +379,9 @@ class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the
 	
 class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most side of the software
 
-	def __init__(self,args=None):
+	def __init__(self,parent=None,args=None):
 		QtGui.QPushButton.__init__(self,args)
+		self.parent=parent
 		self.args=args
 	def setIcon(self,arg):
 		self.Icon=QtGui.QIcon()
@@ -378,8 +389,10 @@ class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most si
 		QtGui.QPushButton.setIcon(self,self.Icon)
 
 
+
 class ComponentMenu(QtGui.QMenu):
 	def  __init__(self,parent):
+
 		QtGui.QMenu.__init__(self,parent)
 		self.ActionUp=QtGui.QAction("Up",parent)
 		self.ActionDown=QtGui.QAction("Down",parent)
@@ -574,7 +587,7 @@ def parseNode(node, components):#To get the properties of a component
 				elif child.name == "icon":
 					parseIcon(child, comp)
 				elif child.name == "ip":
-					comp.ip=parseSingleValue(child, "value")
+					comp.Ip=parseSingleValue(child, "value")
 				elif stringIsUseful(str(child.properties)):
 					print 'ERROR when parsing rcmanager: '+str(child.name)+': '+str(child.properties)
 			child = child.next
@@ -690,6 +703,7 @@ def writeConfigToFile(dict, components, path):
 		writeToFile(file, '\t\t<xpos value="' + str(comp.x) + '" />')
 		writeToFile(file, '\t\t<ypos value="' + str(comp.y) + '" />')
 		writeToFile(file, '\t\t<icon value="'+str(comp.IconFilePath)+'"/>')
+		writeToFile(file, '\t\t<ip value="'+str(comp.Ip)+'"/>')
 		writeToFile(file, '\t</node>\n')
 
 	writeToFile(file, '</rcmanager>')

@@ -57,6 +57,8 @@ class MainClass(QtGui.QMainWindow):
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
 		self.setZoom()
 		self.setupActions()
+		#self.textEdit=QtGui.QTextEdit()#Temp
+		#self.UI.tabWidget_2.addTab(self.textEdit,"Helllo")#Temp
 		#print "Count is "+ str(self.UI.verticalLayout.count())
 	def setupActions(self):##To setUp connection like saving,opening,etc
 		self.connect(self.UI.actionSave,QtCore.SIGNAL("triggered(bool)"),self.saveXmlFile)
@@ -88,27 +90,49 @@ class MainClass(QtGui.QMainWindow):
 				raise Exception("No Name Entered")
 				
 			else :
-				self.searchforComponent(alias)
-				
+				x=self.searchforComponent(alias)#Write here what ever should happen then
+				self.graphTree.centerOn(x.graphicsItem)
+				#x.graphicsItem.setSelected(True)
 			self.logToDisplay(alias+"  Found")
 		except Exception, e:
 			self.logToDisplay("Search Error::  "+ str(e),"R")
 		else:
-			pass
+			self.UI.lineEdit.clear()
 		finally:
 			pass
-	def ipclassify(self):#To find all the computer present
+	def ipCount(self):#To find all the computer present
 		self.ipList=[]##Ip listed from the xml file
 		for x in self.componentList.__iter__():
 			flag=False
-			for y in ipList.__iter__():
+			for y in self.ipList.__iter__():
 				if y==x.Ip:
 					flag=True
 					break
 			if flag==False:
-				ipList.append(x.Ip)
-	def setAllIpColor(self):
-		diff=int(655/self.ipList().__le__())
+				self.ipList.append(x.Ip)
+			
+	def setAllIpColor(self):#A small algorithm to allot colors to each Ip
+		try:
+			diff=int(765/self.ipList.__len__())
+			for x in range(self.ipList.__len__()): 
+				num=(x+1)*diff
+				
+				if num<=255:
+					for y in self.componentList.__iter__():
+						if self.ipList[x]==y.Ip:
+							y.graphicsItem.IpColor=QtGui.QColor.fromRgb(num,0,0)
+				elif num>255 and num <=510:
+					for y in self.componentList.__iter__():
+						if self.ipList[x]==y.Ip:
+							y.graphicsItem.IpColor=QtGui.QColor.fromRgb(255,num-255,0)
+				elif num>510:
+					for y in self.componentList.__iter__():
+						if self.ipList[x]==y.Ip:
+							y.graphicsItem.IpColor=QtGui.QColor.fromRgb(255,255,num-510)
+			self.logToDisplay("IpColor Alloted SuccessFully")				
+		except Exception,e:
+			raise Exception("Error During Alloting Ipcolors "+str(e))
+			  	
 
 	def setDirectoryItems(self):#This will set and draw all the directory components
 		for x in self.componentList.__iter__():				
@@ -256,6 +280,8 @@ class MainClass(QtGui.QMainWindow):
 			self.networkSettings=Settings
 			self.componentList=List
 			try :
+				self.ipCount()
+				self.setAllIpColor()
 				self.drawAllComponents()
 				self.setConnectionItems()
 				self.drawAllConnection()
