@@ -1,77 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <rcmanager>
-   <generalInformation>                                    
-      <editor path="kate" dock="false" />
-      <timeouts fixed="1000.0" blink="300.0" />
-      <clicks switch="2.0" interval="400.0" />
-      <graph alpha="80.0" active="true" scale="200.0" />
-      <graphTiming idletime="1000.0" focustime="500.0" fasttime="10.0" fastperiod="2000.0" />
-      <simulation hookes="0.07" springlength="0.5" friction="0.4" step="0.5" fieldforce="20000.0" />
-   </generalInformation>
 
-  <node alias="Item1" endpoint="differentialrobot:tcp -h localhost -p 10004">
-  
-    <workingDir path="/home/robocomp/" />
-    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
-    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
-    <configFile path="/etc/config" />
-    <xpos value="0" />
-    <ypos value="0" />
-    <icon  value="/share/rcmanager/DefaultIcon.png"/>
-    <ip value="127.0.0.1"/>
-  </node>
+	<generalInformation>
+		<editor path="kate" dock="false" />
+		<timeouts fixed="1000.0" blink="300.0" />
+		<clicks switch="2.0" interval="400.0" />
+		<graph alpha="80.0" active="true" scale="200.0" />
+		<graphTiming idletime="1000.0" focustime="500.0" fasttime="10.0" fastperiod="2000.0" />
+		<simulation hookes="0.07" springlength="0.5" friction="0.4" step="0.5" fieldforce="20000.0" />
+	</generalInformation>
 
+	<node alias="SIM" endpoint="differentialrobot:tcp -h localhost -p 10004">
+		<workingDir path="/home/h20/robocomp/files/innermodel" />
+		<upCommand command="rcremote 127.0.0.1 SIM /home/h20/robocomp/files/innermodel rcis simpleworld.xml" />
+		<downCommand command="pkill -9 -f rcis" />
+		<configFile path="" />
+		<xpos value="0.0" />
+		<ypos value="0.0" />
+		<icon value="/media/h20/2A5037F65037C6FB/BASIL/FOOT PRINTS/Year 2016/GSOC/ICONS/car.png"/>
+		<ip value="127.0.0.1"/>
+	</node>
 
-  <node alias="Item2" endpoint="CommonBehavior.Endpoints:tcp -p 1">
-    
-    <dependence alias="Item1"/>
-    <workingDir path="/home/robocomp/" />
-    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
-    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
-    <configFile path="/etc/config" />
-    <xpos value="200" />
-    <ypos value="-200" />
-    <icon  value="/share/rcmanager/DefaultIcon.png"/>
-    <ip value="127.0.0.1"/>
-  </node>
+	<node alias="Controller" endpoint="CommonBehavior.Endpoints:tcp -p 1">
+  <dependence alias="SIM" />
+		<workingDir path="/home/robocomp/" />
+		<upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
+		<downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
+		<configFile path="/etc/config" />
+		<xpos value="200.0" />
+		<ypos value="-200.0" />
+		<icon value="/home/h20/Coding /Robocomp/GSOC_TOOL/rcmanager/rcmanager/share/rcmanager/1465594390_sign-add.png"/>
+		<ip value="127.0.0.1"/>
+	</node>
 
-   <node alias="Item3" endpoint="CommonBehavior.Endpoints:tcp -p 1">
-    
-    <dependence alias="Item1"/>
-    <workingDir path="/home/robocomp/" />
-    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
-    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
-    <configFile path="/etc/config" />
-    <xpos value="-200" />
-    <ypos value="-200" />
-    <icon  value="/share/rcmanager/DefaultIcon.png"/>
-   <ip value="127.9.0.1"/>
-  </node>
-
-<node alias="Item4" endpoint="CommonBehavior.Endpoints:tcp -p 1">
-    
-    <dependence alias="Item1"/>
-    <workingDir path="/home/robocomp/" />
-    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
-    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
-    <configFile path="/etc/config" />
-    <xpos value="-200" />
-    <ypos value="200" />
-    <icon  value="/share/rcmanager/DefaultIcon.png"/>
-    <ip value="12.5.2.6"/>
-  </node>
-
-  <node alias="Item5" endpoint="CommonBehavior.Endpoints:tcp -p 1">
-    
-    <dependence alias="Item1"/>
-    <workingDir path="/home/robocomp/" />
-    <upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
-    <downCommand command="pkill -9 -f keyboardrobotcontroller.py" />
-    <configFile path="/etc/config" />
-    <xpos value="200" />
-    <ypos value="-200" />
-    <icon  value="/share/rcmanager/DefaultIcon.png"/>
-    <ip value="127.1.8.1"/>
-  </node>  
-</rcmanager>   
+	
+</rcmanager>

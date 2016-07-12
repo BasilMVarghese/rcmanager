@@ -261,9 +261,13 @@ class MainClass(QtGui.QMainWindow):
 		for x in self.componentList.__iter__():
 			self.NetworkScene.removeItem(x.graphicsItem)
 			self.UI.verticalLayout.removeWidget(x.DirectoryItem)
+			del x.DirectoryItem
+			self.UI.scrollAreaWidgetContents.destroy(destroyWindow=False,destroySubWindows=True)
+			#print "Deleted  "+ x.alias
 			for y in x.asBeg.__iter__():
 				self.NetworkScene.removeItem(y)
-
+		self.networkSettings=rcmanagerConfignew.getDefaultValues()
+		del self.componentList[:]	
 	def openXmlFile(self):#To open the xml files ::Unfinished
 		Settings=rcmanagerConfignew.getDefaultValues()
 		List=[]
@@ -275,8 +279,6 @@ class MainClass(QtGui.QMainWindow):
 			self.logToDisplay("Opening File Failed::"+str(e),"R")
 		else:
 			self.removeAllComponents()
-			self.networkSettings=rcmanagerConfignew.getDefaultValues()
-			del self.componentList[:]
 			self.networkSettings=Settings
 			self.componentList=List
 			try :

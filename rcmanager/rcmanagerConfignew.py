@@ -275,8 +275,8 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 			except:
 				self.mutex.lock()
 				if self.alive==True:
-					self.changed()
-				self.alive = False
+					self.changed(
+)				self.alive = False
 				self.mutex.unlock()
 			#self.mutex.lock()
 			#print self.component.alias +" ::Status:: "+ str(self.alive)
