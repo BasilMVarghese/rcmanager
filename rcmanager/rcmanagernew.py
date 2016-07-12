@@ -50,13 +50,22 @@ class MainClass(QtGui.QMainWindow):
 		self.networkSettings=rcmanagerConfignew.getDefaultValues()
 		self.UI=rcmanagerUItemplate.Ui_MainWindow()
 		self.UI.setupUi(self)
+		self.SaveWarning=rcmanagerConfignew.SaveWarningDialog(self)
 		self.NetworkScene=rcmanagerConfignew.ComponentScene()##The graphicsScene
 		self.graphTree = rcmanagerConfignew.ComponentTree(self.UI.frame,self)##The graphicsNode
 		self.graphTree.setScene(self.NetworkScene)
 		self.graphTree.setObjectName(_fromUtf8("graphicsView"))
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
 		self.setZoom()
+		self.FileOpenStatus=False
+		#setting the code Editor
+		
+		self.CodeEditor=rcmanagerConfignew.CodeEditor(self.UI.tab_2)
+		self.UI.verticalLayout_2.addWidget(self.CodeEditor)
+
+		#Setting up the connection
 		self.setupActions()
+
 		#self.textEdit=QtGui.QTextEdit()#Temp
 		#self.UI.tabWidget_2.addTab(self.textEdit,"Helllo")#Temp
 		#print "Count is "+ str(self.UI.verticalLayout.count())
@@ -81,6 +90,7 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.CompoPopUpMenu.ActionControl,QtCore.SIGNAL("triggered(bool)"),self.controlComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.componentSettings)
 		self.connect(self.UI.toolButton_2,QtCore.SIGNAL("clicked()"),self.searchEnteredAlias)
+		self.connect(self.SaveWarning,QtCore.SIGNAL("save()"),self.saveXmlFile)
 		self.logToDisplay("Tool Started")
 
 	def searchEnteredAlias(self):#Called when we type an alias and search it
@@ -272,7 +282,14 @@ class MainClass(QtGui.QMainWindow):
 		Settings=rcmanagerConfignew.getDefaultValues()
 		List=[]
 		try:
+			if self.FileOpenStatus==True:# To make sure the data we have been working on have been saved
+				decision=self.SaveWarning.decide()
+				if decision=="C":
+					raise Exception(" Reason:Canceled by User")
+				elif decision=="S":					
+					self.saveXmlFile()			
 			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',initDir,'*.xml')
+			self.CodeEditor.setText(open(self.filePath).read())
 			List , Settings=rcmanagerConfignew.getConfigFromFile(self.filePath)			
 			
 		except Exception,e:
@@ -288,12 +305,13 @@ class MainClass(QtGui.QMainWindow):
 				self.setConnectionItems()
 				self.drawAllConnection()
 				self.setDirectoryItems()
+				self.FileOpenStatus=True
 				self.logToDisplay("File "+self.filePath +"  Read successfully")		
 			except Exception,e:
 				self.logToDisplay("Opening File Failed::"+str(e),"R")
 	def saveXmlFile(self):##To save the entire treesetting into a xml file::Unfinished
 		try:
-			saveFileName=QtGui.QFileDialog.getSaveFileName(self,'Save File','/home/h20','*.xml')
+			saveFileName=QtGui.QFileDialog.getSaveFileName(self,'Save File',initDir,'*.xml')
 			rcmanagerConfignew.writeConfigToFile(self.networkSettings,self.componentList,saveFileName)
 			self.logToDisplay("Saved to File "+saveFileName+" ::SuccessFull")
 		except:

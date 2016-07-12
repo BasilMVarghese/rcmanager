@@ -26,8 +26,8 @@
 
 
 # Importamos el modulo libxml2
-import libxml2, sys,threading,Ice ,time,os
-from PyQt4 import QtCore, QtGui, Qt
+import libxml2, sys,threading,Ice ,time,os,SaveWarning
+from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
 
 
@@ -45,6 +45,69 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
+class SaveWarningDialog(QtGui.QDialog):#To be used as a warning window while deleting existing tree without saving
+	def __init__(self,parent=None):
+		QtGui.QDialog.__init__(self)
+		self.parent=parent
+		self.UI=SaveWarning.Ui_Dialog()
+		self.UI.setupUi(self)
+		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.save)
+		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.dontSave)
+		self.connect(self.UI.pushButton_3,QtCore.SIGNAL("clicked()"),self.cancel)
+		self.setModal(True)
+		self.Status="C"
+	def decide(self):
+		self.exec_()
+		return self.Status
+	def save(self):
+		self.close()
+		self.Status="S"
+	def dontSave(self):
+		self.close()
+		self.Status="D"
+	def cancel(self):
+		self.close()
+		self.Status="C"
+
+class CodeEditor(Qsci.QsciScintilla):#For the dynamic code editing (Widget )
+	def __init__(self,parent=None):
+		Qsci.QsciScintilla.__init__(self,parent)
+
+		#Setting default font
+		font=QtGui.QFont()
+		font.setFamily('Courier')
+		font.setFixedPitch(True)
+		font.setPointSize(10)
+		self.setFont(font)
+		self.setMarginsFont(font)
+
+
+		# Margin 0 is used for line numbers
+		fontmetrics =QtGui.QFontMetrics(font)
+		self.setMarginsFont(font)
+		self.setMarginWidth(0,fontmetrics.width("0000") + 6)
+		self.setMarginLineNumbers(0, True)
+		self.setMarginsBackgroundColor(QtGui.QColor("#cccccc"))		
+
+		#BraceMatching
+		self.setBraceMatching(Qsci.QsciScintilla.SloppyBraceMatch)
+
+		# Current line visible with special background color
+		self.setCaretLineVisible(True)
+		self.setCaretLineBackgroundColor(QtGui.QColor("#ffe4e4"))
+
+		#Setting xml lexer
+		lexer = Qsci.QsciLexerXML()
+		lexer.setDefaultFont(font)
+		self.setLexer(lexer)
+		self.SendScintilla(Qsci.QsciScintilla.SCI_STYLESETFONT, 1, 'Courier')
+	
+	def on_margin_clicked(self, nmargin, nline, modifiers):
+		# Toggle marker for the line the margin was clicked on
+		if self.markersAtLine(nline) != 0:
+			self.markerDelete(nline, self.ARROW_MARKER_NUM)
+		else:
+			self.markerAdd(nline, self.ARROW_MARKER_NUM)
 
 class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 	"""docstring for ClassName"""
@@ -275,8 +338,8 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 			except:
 				self.mutex.lock()
 				if self.alive==True:
-					self.changed(
-)				self.alive = False
+					self.changed()
+				self.alive = False
 				self.mutex.unlock()
 			#self.mutex.lock()
 			#print self.component.alias +" ::Status:: "+ str(self.alive)
