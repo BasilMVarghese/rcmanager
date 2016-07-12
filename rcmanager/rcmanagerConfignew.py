@@ -125,6 +125,8 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 	def mouseMoveEvent(self,event):
 		QtGui.QGraphicsItem.mouseMoveEvent(self,event)
 		self.updateforDrag()
+		self.parent.emit(QtCore.SIGNAL("networkChanged()"))
+		#print "Changed"
 
 	def updateforDrag(self):
 		for x in self.parent.asBeg.__iter__():
@@ -370,8 +372,9 @@ class ComponentController():##This contains the GUI and internal process regardi
 #		
 # Component information container class.
 #
-class CompInfo:##This contain the general Information about the Components which is read from the files and created
+class CompInfo(QtCore.QObject):##This contain the general Information about the Components which is read from the files and created
 	def __init__(self):
+		QtCore.QObject.__init__(self)
 		self.asEnd=[]#This is the list of connection where the node act as the ending point
 		self.asBeg=[]#This is the list of connection where the node act as the beginning point
 		self.endpoint = ''
@@ -436,9 +439,9 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 
 
 class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the graph
-	def __init__(self,arg=None):
+	def __init__(self,parent=None):
 		QtGui.QGraphicsScene.__init__(self)
-		self.arg=arg
+		self.parent=parent
 	
 class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most side of the software
 

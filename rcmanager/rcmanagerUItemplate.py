@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'rcmanagerUItemplate.ui'
 #
-# Created: Tue Jul 12 23:52:11 2016
+# Created: Wed Jul 13 00:12:07 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -282,7 +282,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Control panel", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Network Tree", None))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Component Editor", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "NetWork Editor", None))
         self.menuFile.setTitle(_translate("MainWindow", "File", None))
         self.menuSimulations.setTitle(_translate("MainWindow", "Tools", None))
         self.menuSimulator.setTitle(_translate("MainWindow", "Simulator", None))

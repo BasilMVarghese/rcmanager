@@ -42,6 +42,9 @@ except AttributeError:
 
 initDir=os.getcwd()
 
+sys.path.append('.')
+sys.path.append('/opt/robocomp/bin')
+
 class MainClass(QtGui.QMainWindow):
 	"""docstring for MainClass"""
 	def __init__(self, arg=None):
@@ -51,13 +54,21 @@ class MainClass(QtGui.QMainWindow):
 		self.UI=rcmanagerUItemplate.Ui_MainWindow()
 		self.UI.setupUi(self)
 		self.SaveWarning=rcmanagerConfignew.SaveWarningDialog(self)
-		self.NetworkScene=rcmanagerConfignew.ComponentScene()##The graphicsScene
+		self.NetworkScene=rcmanagerConfignew.ComponentScene(self)##The graphicsScene
 		self.graphTree = rcmanagerConfignew.ComponentTree(self.UI.frame,self)##The graphicsNode
 		self.graphTree.setScene(self.NetworkScene)
 		self.graphTree.setObjectName(_fromUtf8("graphicsView"))
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
 		self.setZoom()
+
+		#tool always works either on opened xml file or user dynamically build xml file.
+		#So the two variable given below will always be the negation of each other
 		self.FileOpenStatus=False
+		self.UserBuiltNetworkStatus=True
+		
+		#To track the changes in the network both functionaly and visually
+		self.HadChanged=False
+		
 		#setting the code Editor
 		
 		self.CodeEditor=rcmanagerConfignew.CodeEditor(self.UI.tab_2)
@@ -110,6 +121,8 @@ class MainClass(QtGui.QMainWindow):
 			self.UI.lineEdit.clear()
 		finally:
 			pass
+	def haveChanged(self):#When the network have changed
+		self.HadChanged=True
 	def ipCount(self):#To find all the computer present
 		self.ipList=[]##Ip listed from the xml file
 		for x in self.componentList.__iter__():
@@ -144,8 +157,9 @@ class MainClass(QtGui.QMainWindow):
 			raise Exception("Error During Alloting Ipcolors "+str(e))
 			  	
 
-	def setDirectoryItems(self):#This will set and draw all the directory components
+	def setDirectoryItems(self):#This will set and draw all the directory components+I have added the job of defining a connection in here
 		for x in self.componentList.__iter__():				
+			self.connect(x,QtCore.SIGNAL("networkChanged()"),self.haveChanged)
 			x.DirectoryItem.setParent(self.UI.scrollAreaWidgetContents)
 			self.UI.verticalLayout.insertWidget(self.UI.verticalLayout.count()-1,x.DirectoryItem)
 		#print "Count is "+ str(self.UI.verticalLayout.count())
@@ -227,7 +241,7 @@ class MainClass(QtGui.QMainWindow):
 	def drawAllComponents(self):#Called to draw the components
 		for x in self.componentList.__iter__():
 			self.NetworkScene.addItem(x.graphicsItem)
-	
+
 	def drawAllConnection(self):#This will start drawing Item
 		for x in self.componentList.__iter__():
 			for y in x.asBeg.__iter__():
@@ -267,7 +281,7 @@ class MainClass(QtGui.QMainWindow):
 		connection.fromX,connection.fromY=rcmanagerConfignew.findPortPosition(fromComponent,fromComponentPort)
 		connection.toX,connection.toY=rcmanagerConfignew.findPortPosition(toComponent,toComponentPort)	
 
-	def removeAllComponents(self):#This removes all the components from everywhere
+	def removeAllComponents(self):#This removes all the components from everywhere#BUUUUUG
 		for x in self.componentList.__iter__():
 			self.NetworkScene.removeItem(x.graphicsItem)
 			self.UI.verticalLayout.removeWidget(x.DirectoryItem)
@@ -278,17 +292,18 @@ class MainClass(QtGui.QMainWindow):
 				self.NetworkScene.removeItem(y)
 		self.networkSettings=rcmanagerConfignew.getDefaultValues()
 		del self.componentList[:]	
-	def openXmlFile(self):#To open the xml files ::Unfinished
+	def openXmlFile(self,terminalArg=False):#To open the xml files ::Unfinished
 		Settings=rcmanagerConfignew.getDefaultValues()
 		List=[]
 		try:
-			if self.FileOpenStatus==True:# To make sure the data we have been working on have been saved
+			if (self.FileOpenStatus==True or self.UserBuiltNetworkStatus) and self.HadChanged :# To make sure the data we have been working on have been saved
 				decision=self.SaveWarning.decide()
 				if decision=="C":
 					raise Exception(" Reason:Canceled by User")
 				elif decision=="S":					
 					self.saveXmlFile()			
-			self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',initDir,'*.xml')
+			if terminalArg==False:
+				self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',initDir,'*.xml')
 			self.CodeEditor.setText(open(self.filePath).read())
 			List , Settings=rcmanagerConfignew.getConfigFromFile(self.filePath)			
 			
@@ -306,6 +321,8 @@ class MainClass(QtGui.QMainWindow):
 				self.drawAllConnection()
 				self.setDirectoryItems()
 				self.FileOpenStatus=True
+				self.UserBuiltNetworkStatus=False
+				self.HadChanged=False
 				self.logToDisplay("File "+self.filePath +"  Read successfully")		
 			except Exception,e:
 				self.logToDisplay("Opening File Failed::"+str(e),"R")
@@ -339,6 +356,16 @@ if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	window=MainClass()
 	window.show()
+	print sys.argv.__len__()
+	if sys.argv.__len__()>1:
+		try:
+			if sys.argv.__len__()>2:
+				raise Exception("Only one arg allowed:: Eg\n rcmanager FileName")
+			window.filePath=sys.argv[1]
+			window.openXmlFile(True)
+		except Exception,e:
+			print "helo"+str(e)
+			sys.exit()
 	try:
 		ret = app.exec_()
 	except:

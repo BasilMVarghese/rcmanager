@@ -109,7 +109,7 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Component Editor</string>
+        <string>NetWork Editor</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0">
         <property name="spacing">
