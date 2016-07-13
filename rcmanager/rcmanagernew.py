@@ -111,7 +111,7 @@ class MainClass(QtGui.QMainWindow):
 		self.logToDisplay("Tool Started")
 
 	def refreshCodeFromTree(self):
-		
+		pass
 	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
 		List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()))
 		self.removeAllComponents()
