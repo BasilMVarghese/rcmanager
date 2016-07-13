@@ -3,12 +3,7 @@
 <rcmanager>
 
 	<generalInformation>
-		<editor path="kate" dock="false" />
-		<timeouts fixed="1000.0" blink="300.0" />
-		<clicks switch="2.0" interval="400.0" />
-		<graph alpha="80.0" active="true" scale="200.0" />
-		<graphTiming idletime="1000.0" focustime="500.0" fasttime="10.0" fastperiod="2000.0" />
-		<simulation hookes="0.07" springlength="0.5" friction="0.4" step="0.5" fieldforce="20000.0" />
+		
 	</generalInformation>
 
 	<node alias="SIM" endpoint="differentialrobot:tcp -h localhost -p 10004">

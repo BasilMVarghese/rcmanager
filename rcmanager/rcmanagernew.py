@@ -111,7 +111,7 @@ class MainClass(QtGui.QMainWindow):
 		self.logToDisplay("Tool Started")
 
 	def refreshCodeFromTree(self):
-		pass
+		string=rcmanagerConfignew.getXmlFromNetwork()
 	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
 		List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()))
 		self.removeAllComponents()
@@ -361,13 +361,19 @@ class MainClass(QtGui.QMainWindow):
 	def saveXmlFile(self):##To save the entire treesetting into a xml file::Unfinished
 		try:
 			saveFileName=QtGui.QFileDialog.getSaveFileName(self,'Save File',initDir,'*.xml')
-			self.saveTofile(saveFileName)
+			string=rcmanagerConfignew.getXmlFromNetwork(self.networkSettings,self.componentList)
+			try:
+				file = open(saveFileName, 'w')
+			except:
+				raise Exception("Can't Open"+saveFileName)
+			rcmanagerConfignew.writeToFile(file,string)
+			
 			self.logToDisplay("Saved to File "+saveFileName+" ::SuccessFull")
 		except:
 			self.logToDisplay("Saving to File"+saveFileName+" ::Failed","R")
 	
-	def saveTofile(fileName):#Save to this filename
-		rcmanagerConfignew.writeConfigToFile(self.networkSettings,self.componentList,fileName)
+	#def saveTofile(fileName):#Save to this filename
+	#	rcmanagerConfignew.writeConfigToFile(self.networkSettings,self.componentList,fileName)
 			
 	
 	def setZoom(self): ##To connect the slider motion to zooming

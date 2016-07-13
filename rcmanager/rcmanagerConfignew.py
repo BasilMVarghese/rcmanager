@@ -492,24 +492,6 @@ class BackgroundMenu(QtGui.QMenu):
 
 def getDefaultValues():
 	dict = {}
-	dict['path'] =                   'kedit'
-	dict['dock'] =                   'false'
-	dict['fixed'] =                  1000               # Period of time in milliseconds between checks.
-	dict['blink'] =                  300                # UI stuff. It the blinkin period (quite useless constant).
-	dict['switch'] =                 2                  # Number of successive clicks to change a component state
-	dict['interval'] =               400                # Maximum period of time in order to consider two clicks successive.
-	dict['alpha'] =                  80
-	dict['idletime'] =               1000               # 1000
-	dict['focustime'] =              500                # 50
-	dict['fasttime'] =               10                 # 10
-	dict['fastperiod'] =             2000               # 2000
-	dict['scale'] =                  200.               # 20.
-	dict['hookes'] =                 0.07               # 0.02
-	dict['springlength'] =           0.5               # 1.
-	dict['friction'] =               0.4               # 0.2
-	dict['step'] =                   0.5                # 1.
-	dict['fieldforce'] =             20000.              # 0.4
-	dict['active'] =                 'false'
 	return dict
 
 def getStringFromFile(path):##This is the first function to be called for reading configurations for a xml file
@@ -548,64 +530,7 @@ def parsercmanager(node): #Call seperate functions for general settings and node
 
 def parseGeneralInformation(node, dict): ##Takes care of reading the general information about the network tree
 	if node.type == "element" and node.name == "generalInformation":
-		child = node.children
-		while child is not None:
-			if child.type == "element":
-				if child.name == "editor":
-					parseEditor(child, dict)
-				elif child.name == "timeouts":
-					parseTimeouts(child, dict)
-				elif child.name == "clicks":
-					parseClicks(child, dict)
-				elif child.name == "graph":
-					parseGraph(child, dict)
-				elif child.name == "graphTiming":
-					parseGraphTiming(child, dict)
-				elif child.name == "simulation":
-					parseSimulation(child, dict)
-				elif stringIsUseful(str(child.properties)):
-					print 'ERROR when parsing generalInformation: '+str(child.name)+': '+str(child.properties)
-			child = child.next
-	elif node.type == "text":
-		if stringIsUseful(str(node.properties)):
-			print ''+str(node.properties)
-	else:
-		print "error: " + str(node.name)
-	print "Got general information"
-def parseEditor(node, dict):##Called from parseGeneralInformation function
-	parseGeneralValues(node, dict, ['path', 'dock'])
-	checkForMoreProperties(node)
-def parseTimeouts(node, dict):##Called from parseGeneralInformation function
-	parseGeneralValues(node, dict, ['fixed', 'blink'])
-	checkForMoreProperties(node)
-	if dict.has_key('fixed'): dict['fixed'] = float(dict['fixed'])
-	if dict.has_key('blink'): dict['blink'] = float(dict['blink'])
-def parseClicks(node, dict):##Called from parseGeneralInformation function
-	parseGeneralValues(node, dict, ['switch', 'interval'])
-	checkForMoreProperties(node)
-	if dict.has_key('switch'): dict['switch'] = float(dict['switch'])
-	if dict.has_key('interval'): dict['interval'] = float(dict['interval'])
-def parseGraph(node, dict):##Called fpushButtonrom parseGeneralInformation function
-	parseGeneralValues(node, dict, ['alpha', 'active', 'scale'])
-	checkForMoreProperties(node)
-	if dict.has_key('alpha'): dict['alpha'] = float(dict['alpha'])
-	if dict.has_key('scale'): dict['scale'] = float(dict['scale'])
-def parseGraphTiming(node, dict):##Called from parseGeneralInformation function
-	parseGeneralValues(node, dict, ['idletime', 'focustime', 'fasttime', 'fastperiod'])
-	checkForMoreProperties(node)
-	if dict.has_key('idletime'): dict['idletime'] = float(dict['idletime'])
-	if dict.has_key('focustime'): dict['focustime'] = float(dict['focustime'])
-	if dict.has_key('fasttime'): dict['fasttime'] = float(dict['fasttime'])
-	if dict.has_key('fastperiod'): dict['fastperiod'] = float(dict['fastperiod'])
-def parseSimulation(node, dict):##Called from parseGeneralInformation function
-	parseGeneralValues(node, dict, ['hookes', 'springlength', 'friction', 'step', 'fieldforce'])
-	checkForMoreProperties(node)
-	if dict.has_key('hookes'): dict['hookes'] = float(dict['hookes'])
-	if dict.has_key('springlength'): dict['springlength'] = float(dict['springlength'])
-	if dict.has_key('friction'): dict['friction'] = float(dict['friction'])
-	if dict.has_key('step'): dict['step'] = float(dict['step'])
-	if dict.has_key('fieldforce'): dict['fieldforce'] = float(dict['fieldforce'])
-
+		print "General Information read"
 
 def parseGeneralValues(node, dict, arg):##Called to read the attribute values of elements of General Values
 	if node.children != None: print 'WARNING: No children expected'
@@ -705,79 +630,37 @@ def parseIcon(node, comp):
 		comp.graphicsItem.setIcon(icon)
 		comp.DirectoryItem.setIcon(icon)
 
-def writeConfigToFile(dict, components, path):
-	try:
-		file = open(path, 'w')
-	except:
-		print 'Can\'t open ' + path + '.'
-		return False
-	writeToFile(file, '<?xml version="1.0" encoding="UTF-8"?>\n')
-	writeToFile(file, '<rcmanager>\n')
-	writeToFile(file, '\t<generalInformation>')
+def getXmlFromNetwork(dict, components):
+	string=''
+	string=string+'<?xml version="1.0" encoding="UTF-8"?>\n'
+	string=string+'<rcmanager>\n\n'
+	string=string+'\t<generalInformation>\n'
 
+	#To be edited as setting increases
 
-	if dict['path']!=None:
-		writeToFile(file, '\t\t<editor path="'+str(dict['path'])+ '" dock="' + str(dict['dock'])  +'" />')
-	if dict['fixed']!=None or dict['blink']!=None:
-		string = '\t\t<timeouts '
-		if dict['fixed']!=None: string = string + 'fixed="'+str(dict['fixed'])+'" '
-		if dict['blink']!=None: string = string + 'blink="'+str(dict['blink'])+'" '
-		string = string + '/>'
-		writeToFile(file, string)
-	if dict['switch']!=None or dict['interval']!=None:
-		string = '\t\t<clicks '
-		if dict['switch']!=None: string = string + 'switch="'+str(dict['switch'])+'" '
-		if dict['interval']!=None: string = string + 'interval="'+str(dict['interval'])+'" '
-		string = string + '/>'
-		writeToFile(file, string)
-	if dict['alpha']!=None or dict['active']!=None or dict['scale']!=None:
-		string = '\t\t<graph '
-		if dict['alpha']!=None: string = string + 'alpha="'+str(dict['alpha'])+'" '
-		if dict['active']!=None: string = string + 'active="'+str(dict['active'])+'" '
-		if dict['scale']!=None: string = string + 'scale="'+str(dict['scale'])+'" '
-		string = string + '/>'
-		writeToFile(file, string)
-	if dict['idletime']!=None or dict['focustime']!=None or dict['fasttime']!=None or dict['fastperiod']!=None:
-		string = '\t\t<graphTiming '
-		if dict['idletime']!=None: string = string + 'idletime="'+str(dict['idletime'])+'" '
-		if dict['focustime']!=None: string = string + 'focustime="'+str(dict['focustime'])+'" '
-		if dict['fasttime']!=None: string = string + 'fasttime="'+str(dict['fasttime'])+'" '
-		if dict['fastperiod']!=None: string = string + 'fastperiod="'+str(dict['fastperiod'])+'" '
-		string = string + '/>'
-		writeToFile(file, string)
-	if dict['hookes']!=None or dict['springlength']!=None or dict['friction']!=None or dict['step']!=None or dict['fieldforce']!=None or dict['active']!=None:
-		string = '\t\t<simulation '
-		if dict['hookes']!=None: string = string + 'hookes="'+str(dict['hookes'])+'" '
-		if dict['springlength']!=None: string = string + 'springlength="'+str(dict['springlength'])+'" '
-		if dict['friction']!=None: string = string + 'friction="'+str(dict['friction'])+'" '
-		if dict['step']!=None: string = string + 'step="'+str(dict['step'])+'" '
-		if dict['fieldforce']!=None: string = string + 'fieldforce="'+str(dict['fieldforce'])+'" '
-		string = string + '/>'
-		writeToFile(file, string)
-
-	writeToFile(file, '\t</generalInformation>')
- 	writeToFile(file, '')
-
+	string=string+'\n\t</generalInformation>\n'
+	
 	for comp in components:
 		comp.x=comp.graphicsItem.x()
 		comp.y=comp.graphicsItem.y()
-		writeToFile(file, '\t<node alias="' + comp.alias + '" endpoint="' + comp.endpoint + '">')
+		string=string+'\n\t<node alias="' + comp.alias + '" endpoint="' + comp.endpoint + '">\n'
 		for dep in comp.dependences:
-			writeToFile(file, '\t\t<dependence alias="' + dep + '" />')
-		writeToFile(file, '\t\t<workingDir path="' + comp.workingdir + '" />')
-		writeToFile(file, '\t\t<upCommand command="' + comp.compup + '" />')
-		writeToFile(file, '\t\t<downCommand command="' + comp.compdown + '" />')
-		writeToFile(file, '\t\t<configFile path="' + comp.configFile + '" />')
-		writeToFile(file, '\t\t<xpos value="' + str(comp.x) + '" />')
-		writeToFile(file, '\t\t<ypos value="' + str(comp.y) + '" />')
-		writeToFile(file, '\t\t<icon value="'+str(comp.IconFilePath)+'"/>')
-		writeToFile(file, '\t\t<ip value="'+str(comp.Ip)+'"/>')
-		writeToFile(file, '\t</node>\n')
+			string=string+'\t\t<dependence alias="' + dep + '" />\n'
+		string=string+'\t\t<workingDir path="' + comp.workingdir + '" />\n'
+		string=string+'\t\t<upCommand command="' + comp.compup + '" />\n'
+		string=string+'\t\t<downCommand command="' + comp.compdown + '" />\n'
+		string=string+'\t\t<configFile path="' + comp.configFile + '" />\n'
+		string=string+'\t\t<xpos value="' + str(comp.x) + '" />\n'
+		string=string+'\t\t<ypos value="' + str(comp.y) + '" />\n'
+		string=string+'\t\t<icon value="'+str(comp.IconFilePath)+'"/>\n'
+		string=string+'\t\t<ip value="'+str(comp.Ip)+'"/>\n'
+		string=string+'\t</node>\n'
 
-	writeToFile(file, '</rcmanager>')
+	string=string+'\n</rcmanager>'
+	return string
 
 def writeToFile(file, string):#Write a line to the file
-	file.write((string+'\n').encode( "utf-8" ))
+	file.write((string).encode( "utf-8" ))
 
 def getDefaultNode():
 	string="\n"
