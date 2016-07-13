@@ -512,14 +512,16 @@ def getDefaultValues():
 	dict['active'] =                 'false'
 	return dict
 
-def getConfigFromFile(path):##This is the first function to be called for reading configurations for a xml file
-	components = []	
+def getStringFromFile(path):##This is the first function to be called for reading configurations for a xml file
 	try:
 		file = open(path, 'r')
 	except:
 		print 'Can\'t open ' + path + '.'
 
 	data = file.read()
+	return data
+def getDataFromString(data):#Data is a string in xml format containing information	
+	components = []	
 	xmldoc = libxml2.parseDoc(data)
 	root = xmldoc.children
 	
@@ -761,7 +763,7 @@ def writeConfigToFile(dict, components, path):
 		comp.y=comp.graphicsItem.y()
 		writeToFile(file, '\t<node alias="' + comp.alias + '" endpoint="' + comp.endpoint + '">')
 		for dep in comp.dependences:
-			writeToFile(file, '  <dependence alias="' + dep + '" />')
+			writeToFile(file, '\t\t<dependence alias="' + dep + '" />')
 		writeToFile(file, '\t\t<workingDir path="' + comp.workingdir + '" />')
 		writeToFile(file, '\t\t<upCommand command="' + comp.compup + '" />')
 		writeToFile(file, '\t\t<downCommand command="' + comp.compdown + '" />')
@@ -776,3 +778,18 @@ def writeConfigToFile(dict, components, path):
 
 def writeToFile(file, string):#Write a line to the file
 	file.write((string+'\n').encode( "utf-8" ))
+
+def getDefaultNode():
+	string="\n"
+	string=string+ '\t<node alias=" " endpoint=" ">\n'
+	string=string+ '\t\t<dependence alias=" " />\n'
+	string=string+ '\t\t<workingDir path=" " />\n'
+	string=string+ '\t\t<upCommand command=" " />\n'
+	string=string+ '\t\t<downCommand command=" " />\n'
+	string=string+ '\t\t<configFile path=" " />\n'
+	string=string+ '\t\t<xpos value=" " />\n'
+	string=string+ '\t\t<ypos value=" " />\n'
+	string=string+ '\t\t<icon value=" "/>\n'
+	string=string+ '\t\t<ip value=" "/>\n'
+	string=string+ '\t</node>\n'
+	return string

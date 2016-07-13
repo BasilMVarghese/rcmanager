@@ -49,6 +49,7 @@ class MainClass(QtGui.QMainWindow):
 	"""docstring for MainClass"""
 	def __init__(self, arg=None):
 		QtGui.QDialog.__init__(self,arg)
+		self.showMaximized()
 		self.componentList=[]
 		self.networkSettings=rcmanagerConfignew.getDefaultValues()
 		self.UI=rcmanagerUItemplate.Ui_MainWindow()
@@ -102,8 +103,39 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.CompoPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.componentSettings)
 		self.connect(self.UI.toolButton_2,QtCore.SIGNAL("clicked()"),self.searchEnteredAlias)
 		self.connect(self.SaveWarning,QtCore.SIGNAL("save()"),self.saveXmlFile)
+		self.connect(self.UI.toolButton_3,QtCore.SIGNAL("clicked()"),self.refreshTreeFromCode)
+		self.connect(self.UI.toolButton_4,QtCore.SIGNAL("clicked()"),self.printTemplSettings)
+		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("clicked()"),self.addTempComponent)
+		self.connect(self.UI.toolButton_6,QtCore.SIGNAL("clicked()"),self.refreshCodeFromTree)
+
 		self.logToDisplay("Tool Started")
 
+	def refreshCodeFromTree(self):
+		
+	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
+		List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()))
+		self.removeAllComponents()
+		self.networkSettings=Settings
+		self.componentList=List
+		try :
+			self.ipCount()
+			self.setAllIpColor()
+			self.drawAllComponents()
+			self.setConnectionItems()
+			self.drawAllConnection()
+			self.setDirectoryItems()
+			self.FileOpenStatus=True
+			self.UserBuiltNetworkStatus=True
+			#self.HadChanged=False
+			self.logToDisplay("File Updated SuccessFully from the Code Editor")		
+		except Exception,e:
+				self.logToDisplay("File updation from Code Failed "+str(e),"R")
+	def printTemplSettings(self):
+		pass
+	def addTempComponent(self):
+		string=rcmanagerConfignew.getDefaultNode()
+		pos=self.CodeEditor.getCursorPosition()
+		self.CodeEditor.insertAt(string,pos[0],pos[1])
 	def searchEnteredAlias(self):#Called when we type an alias and search it
 		try:
 			alias=self.UI.lineEdit.text()
@@ -222,8 +254,6 @@ class MainClass(QtGui.QMainWindow):
 				self.downComponent(x)
 			except Exception,e :
 				pass
-	def drawfromfile(self,nodelist):#To be called when a new tree have to be drawn which was directly read from file
-		pass
 	def simulatorSettings(self):##To edit the simulatorSettings:Unfinished
 		print "Simulator settings is on"
 	def controlPanelSettings(self):##To edit the controlPanel Settings:Unfinshed
@@ -296,16 +326,18 @@ class MainClass(QtGui.QMainWindow):
 		Settings=rcmanagerConfignew.getDefaultValues()
 		List=[]
 		try:
-			if (self.FileOpenStatus==True or self.UserBuiltNetworkStatus) and self.HadChanged :# To make sure the data we have been working on have been saved
+			if self.HadChanged :# To make sure the data we have been working on have been saved
 				decision=self.SaveWarning.decide()
 				if decision=="C":
 					raise Exception(" Reason:Canceled by User")
 				elif decision=="S":					
 					self.saveXmlFile()			
-			if terminalArg==False:
+			if terminalArg==False and UserHaveChoice==True:
 				self.filePath=QtGui.QFileDialog.getOpenFileName(self,'Open file',initDir,'*.xml')
-			self.CodeEditor.setText(open(self.filePath).read())
-			List , Settings=rcmanagerConfignew.getConfigFromFile(self.filePath)			
+			
+			string=rcmanagerConfignew.getStringFromFile(self.filePath)
+			self.CodeEditor.setText(string)
+			List , Settings=rcmanagerConfignew.getDataFromString(string)			
 			
 		except Exception,e:
 			self.logToDisplay("Opening File Failed::"+str(e),"R")
@@ -329,10 +361,15 @@ class MainClass(QtGui.QMainWindow):
 	def saveXmlFile(self):##To save the entire treesetting into a xml file::Unfinished
 		try:
 			saveFileName=QtGui.QFileDialog.getSaveFileName(self,'Save File',initDir,'*.xml')
-			rcmanagerConfignew.writeConfigToFile(self.networkSettings,self.componentList,saveFileName)
+			self.saveTofile(saveFileName)
 			self.logToDisplay("Saved to File "+saveFileName+" ::SuccessFull")
 		except:
 			self.logToDisplay("Saving to File"+saveFileName+" ::Failed","R")
+	
+	def saveTofile(fileName):#Save to this filename
+		rcmanagerConfignew.writeConfigToFile(self.networkSettings,self.componentList,fileName)
+			
+	
 	def setZoom(self): ##To connect the slider motion to zooming
 		self.UI.verticalSlider.setRange(-20,20)
 		self.UI.verticalSlider.setTickInterval(1)
@@ -356,13 +393,12 @@ if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	window=MainClass()
 	window.show()
-	print sys.argv.__len__()
 	if sys.argv.__len__()>1:
 		try:
 			if sys.argv.__len__()>2:
 				raise Exception("Only one arg allowed:: Eg\n rcmanager FileName")
 			window.filePath=sys.argv[1]
-			window.openXmlFile(True)
+			window.openXmlFile(terminalArg=True)
 		except Exception,e:
 			print "helo"+str(e)
 			sys.exit()
