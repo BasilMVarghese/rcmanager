@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'toolsettingsUI.ui'
 #
-# Created: Thu Jun 23 02:49:33 2016
+# Created: Thu Jul 14 14:03:05 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName(_fromUtf8("Dialog"))
-        Dialog.resize(462, 287)
+        Dialog.resize(725, 510)
         self.gridLayout = QtGui.QGridLayout(Dialog)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.verticalLayout = QtGui.QVBoxLayout()

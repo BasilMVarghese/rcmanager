@@ -26,7 +26,8 @@
 
 
 # Importamos el modulo libxml2
-import libxml2, sys,threading,Ice ,time,os,SaveWarning
+import libxml2, sys,threading,Ice ,time,os 
+import SaveWarning,toolsettingsUI
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
 
@@ -44,6 +45,16 @@ try:
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
+
+class toolSettings(QtGui.QDialog):#This will show a dialog window for selecting the rcmanager tool settings
+	def __init__(self,parent=None):
+		QtGui.QDialog.__init__(self)
+		self.parent=parent
+		self.UI=toolsettingsUI.Ui_Dialog()			
+		self.UI.setupUi(self)
+		self.fontsettingsWorkspace=QtGui.QWorkspace(self.UI.tab_2)
+		self.fontDialog=QtGui.QFontDialog(self.fontsettingsWorkspace)
+		self.fontsettingsWorkspace.addWindow(self.fontDialog)
 
 class SaveWarningDialog(QtGui.QDialog):#To be used as a warning window while deleting existing tree without saving
 	def __init__(self,parent=None):
@@ -74,17 +85,17 @@ class CodeEditor(Qsci.QsciScintilla):#For the dynamic code editing (Widget )
 		Qsci.QsciScintilla.__init__(self,parent)
 
 		#Setting default font
-		font=QtGui.QFont()
-		font.setFamily('Courier')
-		font.setFixedPitch(True)
-		font.setPointSize(10)
-		self.setFont(font)
-		self.setMarginsFont(font)
+		self.font=QtGui.QFont()
+		self.font.setFamily('Courier')
+		self.font.setFixedPitch(True)
+		self.font.setPointSize(10)
+		self.setFont(self.font)
+		self.setMarginsFont(self.font)
 
 
 		# Margin 0 is used for line numbers
-		fontmetrics =QtGui.QFontMetrics(font)
-		self.setMarginsFont(font)
+		fontmetrics =QtGui.QFontMetrics(self.font)
+		self.setMarginsFont(self.font)
 		self.setMarginWidth(0,fontmetrics.width("0000") + 6)
 		self.setMarginLineNumbers(0, True)
 		self.setMarginsBackgroundColor(QtGui.QColor("#cccccc"))		
@@ -98,7 +109,7 @@ class CodeEditor(Qsci.QsciScintilla):#For the dynamic code editing (Widget )
 
 		#Setting xml lexer
 		lexer = Qsci.QsciLexerXML()
-		lexer.setDefaultFont(font)
+		lexer.setDefaultFont(self.font)
 		self.setLexer(lexer)
 		self.SendScintilla(Qsci.QsciScintilla.SCI_STYLESETFONT, 1, 'Courier')
 	
@@ -119,10 +130,13 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		self.pos=None
 		self.IpColor=None
 		self.aliveStatus=False
+		self.detailsShower=None
 		self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
+		self.setAcceptHoverEvents(True)
 		#self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
 		self.setZValue(1)#To make sure the Nodes are always on top of connections
 	def mouseMoveEvent(self,event):
+		self.parent.mainWindow.nodeDetailDisplayer.hide()
 		QtGui.QGraphicsItem.mouseMoveEvent(self,event)
 		self.updateforDrag()
 		self.parent.emit(QtCore.SIGNAL("networkChanged()"))
@@ -145,6 +159,13 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 	def mouseReleaseEvent(self,event):
 		QtGui.QGraphicsItem.mouseReleaseEvent(self,event)
 		self.updateforDrag(	)
+	def hoverEnterEvent(self,event):
+		#print self.parent.mainWindow.graphTree
+		pos=self.parent.mainWindow.graphTree.mapFromScene(self.mapToScene(QtCore.QPointF()))
+		self.parent.mainWindow.nodeDetailDisplayer.showdetails(pos.x(),pos.y(),self.parent)
+	def hoverLeaveEvent(self,event):
+		self.parent.mainWindow.nodeDetailDisplayer.isShowing=False
+		self.parent.mainWindow.nodeDetailDisplayer.hide()
 
 	def setIpColor(self,color=QtGui.QColor.fromRgb(0,255,0)):#To set the Ipcolor
 		self.IpColor=color
@@ -364,17 +385,30 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 		self.component.status=not self.alive
 		self.component.graphicsItem.update()
 
-class ComponentController():##This contains the GUI and internal process regarding the controlling of the a particular component.
+class ShowItemDetails(QtGui.QWidget):##This contains the GUI and internal process regarding the controlling of the a particular component.
 	def __init__(self,parent=None):
-		self.Display=QtGui.QTextEdit()
-		self.Process=QtCore.QProcess()
-
+		QtGui.QWidget.__init__(self)
+		self.component=None
+		self.setParent(parent)
+		self.detailString=" "
+		self.label=QtGui.QTextEdit(self)
+		self.label.setGeometry(0,0,150,150)
+		self.isShowing=False
+		self.hide()
+	def showdetails(self,x,y,item=None):
+		self.label.setText(item.alias)
+		self.setGeometry(x,y,150,150)
+	  	self.isShowing=True
+	  	self.show()
 #		
 # Component information container class.
 #
 class CompInfo(QtCore.QObject):##This contain the general Information about the Components which is read from the files and created
 	def __init__(self):
+
 		QtCore.QObject.__init__(self)
+		self.View=None
+		self.mainWindow=None
 		self.asEnd=[]#This is the list of connection where the node act as the ending point
 		self.asBeg=[]#This is the list of connection where the node act as the beginning point
 		self.endpoint = ''
@@ -430,12 +464,12 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 		pos=event.pos()
 		item=self.itemAt(pos)
 		#print pos#TEMP
-		if item:
+		if isinstance(item,VisualNode):
 			self.CompoPopUpMenu.setComponent(item)
 			self.CompoPopUpMenu.popup(GloPos)
 		else:
+			self.BackPopUpMenu.pos=pos
 			self.BackPopUpMenu.popup(GloPos)
-
 
 
 class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the graph
@@ -489,7 +523,7 @@ class BackgroundMenu(QtGui.QMenu):
 		self.addAction(self.ActionSettings)
 		self.addAction(self.ActionAdd)
 		self.addAction(self.ActionSearch)
-
+		self.pos=None
 def getDefaultValues():
 	dict = {}
 	return dict

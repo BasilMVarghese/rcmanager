@@ -61,7 +61,7 @@ class MainClass(QtGui.QMainWindow):
 		self.graphTree.setObjectName(_fromUtf8("graphicsView"))
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
 		self.setZoom()
-
+		self.toolSettingDialog=rcmanagerConfignew.toolSettings(self)
 		#tool always works either on opened xml file or user dynamically build xml file.
 		#So the two variable given below will always be the negation of each other
 		self.FileOpenStatus=False
@@ -74,6 +74,10 @@ class MainClass(QtGui.QMainWindow):
 		
 		self.CodeEditor=rcmanagerConfignew.CodeEditor(self.UI.tab_2)
 		self.UI.verticalLayout_2.addWidget(self.CodeEditor)
+
+		#The small widget which appears when we right click on a node in tree
+		
+		self.nodeDetailDisplayer=rcmanagerConfignew.ShowItemDetails(self.graphTree)
 
 		#Setting up the connection
 		self.setupActions()
@@ -105,13 +109,21 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.SaveWarning,QtCore.SIGNAL("save()"),self.saveXmlFile)
 		self.connect(self.UI.toolButton_3,QtCore.SIGNAL("clicked()"),self.refreshTreeFromCode)
 		self.connect(self.UI.toolButton_4,QtCore.SIGNAL("clicked()"),self.printTemplSettings)
-		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("clicked()"),self.addTempComponent)
+		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("clicked()"),self.addComponentTemp)
 		self.connect(self.UI.toolButton_6,QtCore.SIGNAL("clicked()"),self.refreshCodeFromTree)
-
+		self.connect(self.UI.toolButton_9,QtCore.SIGNAL("clicked()"),self.editorFontSettings)
 		self.logToDisplay("Tool Started")
 
+	def editorFontSettings(self):#BUUUUUUUUUUUUUGGGG
+		font,ok=QtGui.QFontDialog.getFont()
+		if ok:
+			self.CodeEditor.setFont(font)
+			self.CodeEditor.font=font
+			self.logToDisplay("New font set for code Editor")
 	def refreshCodeFromTree(self):
-		string=rcmanagerConfignew.getXmlFromNetwork()
+		string=rcmanagerConfignew.getXmlFromNetwork(self.networkSettings,self.componentList)
+		self.CodeEditor.setText(string)
+		self.logToDisplay("Code Updated SucceFully from the graph")
 	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
 		List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()))
 		self.removeAllComponents()
@@ -132,7 +144,7 @@ class MainClass(QtGui.QMainWindow):
 				self.logToDisplay("File updation from Code Failed "+str(e),"R")
 	def printTemplSettings(self):
 		pass
-	def addTempComponent(self):
+	def addComponentTemp(self):
 		string=rcmanagerConfignew.getDefaultNode()
 		pos=self.CodeEditor.getCursorPosition()
 		self.CodeEditor.insertAt(string,pos[0],pos[1])
@@ -190,7 +202,9 @@ class MainClass(QtGui.QMainWindow):
 			  	
 
 	def setDirectoryItems(self):#This will set and draw all the directory components+I have added the job of defining a connection in here
-		for x in self.componentList.__iter__():				
+		for x in self.componentList.__iter__():
+			x.View=self.graphTree
+			x.mainWindow=self				
 			self.connect(x,QtCore.SIGNAL("networkChanged()"),self.haveChanged)
 			x.DirectoryItem.setParent(self.UI.scrollAreaWidgetContents)
 			self.UI.verticalLayout.insertWidget(self.UI.verticalLayout.count()-1,x.DirectoryItem)
@@ -265,7 +279,7 @@ class MainClass(QtGui.QMainWindow):
 	def simulatorOn(self):#To switch ON simulator::Unfinished
 		print "Simulator is On"
 	def rcmanagerSetting(self):#To edit the setting of the entire rcmanager settings tool
-		print "Opened tool settings"	
+		pass
 	def exitRcmanager(self):##To exit the tool after doing all required process
 		print "Exiting"
 	def drawAllComponents(self):#Called to draw the components
@@ -279,6 +293,7 @@ class MainClass(QtGui.QMainWindow):
 
 	def setConnectionItems(self):#This is called right after reading from a file,Sets all the connection graphicsItems
 		for x in self.componentList.__iter__():
+			
 			for y in x.dependences.__iter__():
 				try :
 					comp=self.searchforComponent(y)
@@ -314,6 +329,7 @@ class MainClass(QtGui.QMainWindow):
 	def removeAllComponents(self):#This removes all the components from everywhere#BUUUUUG
 		for x in self.componentList.__iter__():
 			self.NetworkScene.removeItem(x.graphicsItem)
+			x.DirectoryItem.hide()
 			self.UI.verticalLayout.removeWidget(x.DirectoryItem)
 			del x.DirectoryItem
 			self.UI.scrollAreaWidgetContents.destroy(destroyWindow=False,destroySubWindows=True)
@@ -322,7 +338,7 @@ class MainClass(QtGui.QMainWindow):
 				self.NetworkScene.removeItem(y)
 		self.networkSettings=rcmanagerConfignew.getDefaultValues()
 		del self.componentList[:]	
-	def openXmlFile(self,terminalArg=False):#To open the xml files ::Unfinished
+	def openXmlFile(self,terminalArg=False,UserHaveChoice=True):#To open the xml files ::Unfinished
 		Settings=rcmanagerConfignew.getDefaultValues()
 		List=[]
 		try:
@@ -346,6 +362,7 @@ class MainClass(QtGui.QMainWindow):
 			self.networkSettings=Settings
 			self.componentList=List
 			try :
+				self.StatusBarFileNameWrite(self.filePath)
 				self.ipCount()
 				self.setAllIpColor()
 				self.drawAllComponents()
@@ -358,6 +375,9 @@ class MainClass(QtGui.QMainWindow):
 				self.logToDisplay("File "+self.filePath +"  Read successfully")		
 			except Exception,e:
 				self.logToDisplay("Opening File Failed::"+str(e),"R")
+	def StatusBarFileNameWrite(self,string):
+		Label=QtGui.QLabel(string)
+		self.UI.statusbar.addWidget(Label)
 	def saveXmlFile(self):##To save the entire treesetting into a xml file::Unfinished
 		try:
 			saveFileName=QtGui.QFileDialog.getSaveFileName(self,'Save File',initDir,'*.xml')
@@ -367,7 +387,7 @@ class MainClass(QtGui.QMainWindow):
 			except:
 				raise Exception("Can't Open"+saveFileName)
 			rcmanagerConfignew.writeToFile(file,string)
-			
+
 			self.logToDisplay("Saved to File "+saveFileName+" ::SuccessFull")
 		except:
 			self.logToDisplay("Saving to File"+saveFileName+" ::Failed","R")
@@ -389,8 +409,13 @@ class MainClass(QtGui.QMainWindow):
 		zoomingfactor=math.pow(1.2,diff)
 		#print zoomingfactor
 		self.graphTree.scale(zoomingfactor,zoomingfactor)
-	def addNode(self):#For adding a new node in the network
-		pass
+	def addNode(self):#For adding a new node in the network >>Unfinished
+		pos=self.graphTree.mapToScene(self.graphTree.BackPopUpMenu.pos)
+		component=rcmanagerConfignew.compInfo()
+		component.x=pos.x()
+		component.y=pos.y()
+
+
 	def addComponent(self):#adding new component on the right component list
 		pass
 	
