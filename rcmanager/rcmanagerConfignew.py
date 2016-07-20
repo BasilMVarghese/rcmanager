@@ -488,6 +488,10 @@ class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most si
 		self.Icon.addPixmap(arg)
 		QtGui.QPushButton.setIcon(self,self.Icon)
 
+	def contextMenuEvent(self,event):
+		self.parent.View.CompoPopUpMenu.setComponent(self.parent.graphicsItem)
+		self.parent.View.CompoPopUpMenu.popup(event.globalPos())
+
 
 
 class ComponentMenu(QtGui.QMenu):
