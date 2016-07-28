@@ -52,16 +52,21 @@ class MainClass(QtGui.QMainWindow):
 		self.showMaximized()
 		self.componentList=[]
 		self.networkSettings=rcmanagerConfignew.getDefaultValues()
+		
 		self.UI=rcmanagerUItemplate.Ui_MainWindow()
 		self.UI.setupUi(self)
+		
 		self.SaveWarning=rcmanagerConfignew.SaveWarningDialog(self)
+		
 		self.NetworkScene=rcmanagerConfignew.ComponentScene(self)##The graphicsScene
 		self.graphTree = rcmanagerConfignew.ComponentTree(self.UI.frame,self)##The graphicsNode
 		self.graphTree.setScene(self.NetworkScene)
 		self.graphTree.setObjectName(_fromUtf8("graphicsView"))
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
 		self.setZoom()
-		self.toolSettingDialog=rcmanagerConfignew.toolSettings(self)
+		
+		#This will read the the network setting from xml files and will set the values
+		self.networkSettingDialog=rcmanagerConfignew.NetworkSettings(self)
 		#tool always works either on opened xml file or user dynamically build xml file.
 		#So the two variable given below will always be the negation of each other
 		self.FileOpenStatus=False
@@ -108,12 +113,19 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.UI.toolButton_2,QtCore.SIGNAL("clicked()"),self.searchEnteredAlias)
 		self.connect(self.SaveWarning,QtCore.SIGNAL("save()"),self.saveXmlFile)
 		self.connect(self.UI.toolButton_3,QtCore.SIGNAL("clicked()"),self.refreshTreeFromCode)
-		self.connect(self.UI.toolButton_4,QtCore.SIGNAL("clicked()"),self.printTemplSettings)
-		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("clicked()"),self.addComponentTemp)
+		self.connect(self.UI.toolButton_4,QtCore.SIGNAL("clicked()"),self.addNetworkTempl)
+		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("clicked()"),self.addComponentTempl)
 		self.connect(self.UI.toolButton_6,QtCore.SIGNAL("clicked()"),self.refreshCodeFromTree)
 		self.connect(self.UI.toolButton_9,QtCore.SIGNAL("clicked()"),self.editorFontSettings)
+		self.connect(self.UI.toolButton_10,QtCore.SIGNAL("clicked()"),self.getNetworkSetting)
 		self.logToDisplay("Tool Started")
-
+	def addNetworkTempl(self):
+		string=rcmanagerConfignew.getDefaultSettings()
+		pos=self.CodeEditor.getCursorPosition()
+		self.CodeEditor.insertAt(string,pos[0],pos[1])
+	def getNetworkSetting(self):#This will show the Network setting Dialog box and will help to update the stuffs
+		self.networkSettingDialog.setData(self.networkSettings)
+		self.networkSettingDialog.show()
 	def editorFontSettings(self):#BUUUUUUUUUUUUUGGGG
 		font,ok=QtGui.QFontDialog.getFont()
 		if ok:
@@ -144,7 +156,7 @@ class MainClass(QtGui.QMainWindow):
 				self.logToDisplay("File updation from Code Failed "+str(e),"R")
 	def printTemplSettings(self):
 		pass
-	def addComponentTemp(self):
+	def addComponentTempl(self):
 		string=rcmanagerConfignew.getDefaultNode()
 		pos=self.CodeEditor.getCursorPosition()
 		self.CodeEditor.insertAt(string,pos[0],pos[1])

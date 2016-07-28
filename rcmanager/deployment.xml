@@ -96,7 +96,7 @@
   <configFile path="/home/robocomp/robocomp/components/robocomp-ursus/etc/ursus.conf" />
   <xpos value="-12.5959212859" />
   <ypos value="71.4484533889" />
-  
+  <icon value=""/>
  </node>
 
  <node alias="rgbd" endpoint="rgbd:tcp -p 10096">
@@ -219,7 +219,6 @@
   <configFile path="kate /home/robocomp/robocomp/components/prp/etc/inneragent.conf" />
   <xpos value="-53.935383258" />
   <ypos value="-112.027247824" />
-  <icon value=""/>
- </node>
+   </node>
 
 </rcmanager>

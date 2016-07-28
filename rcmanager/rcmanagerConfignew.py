@@ -27,7 +27,7 @@
 
 # Importamos el modulo libxml2
 import libxml2, sys,threading,Ice ,time,os 
-import SaveWarning,toolsettingsUI
+import SaveWarning,networkSettingUI
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
 
@@ -46,15 +46,15 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
-class toolSettings(QtGui.QDialog):#This will show a dialog window for selecting the rcmanager tool settings
+class NetworkSettings(QtGui.QDialog):#This will show a dialog window for selecting the rcmanager tool settings
 	def __init__(self,parent=None):
 		QtGui.QDialog.__init__(self)
 		self.parent=parent
-		self.UI=toolsettingsUI.Ui_Dialog()			
+		self.UI=networkSettingUI.Ui_Dialog()			
 		self.UI.setupUi(self)
-		self.fontsettingsWorkspace=QtGui.QWorkspace(self.UI.tab_2)
-		self.fontDialog=QtGui.QFontDialog(self.fontsettingsWorkspace)
-		self.fontsettingsWorkspace.addWindow(self.fontDialog)
+		self.setting=None
+	def setData(self,setting):
+		self.setting=setting
 
 class SaveWarningDialog(QtGui.QDialog):#To be used as a warning window while deleting existing tree without saving
 	def __init__(self,parent=None):
@@ -133,6 +133,7 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		self.detailsShower=None
 		self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
 		self.setAcceptHoverEvents(True)
+		self.Icon=None
 		#self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
 		self.setZValue(1)#To make sure the Nodes are always on top of connections
 	def mouseMoveEvent(self,event):
@@ -324,7 +325,8 @@ class NodeConnection(QtGui.QGraphicsItem):
 		#painter.drawRect(self.rect)
 	def drawarrows(self,painter):#To draw the arrows in the connections::Unfinished
 		cener=(self.fromPoint+self.toPoint)/2
-#	self.Line
+	def hoverEnterEvent(self,Event):#Unfinished
+		print "Mouse Hovering in connection from :" +self.fromComponent+" to :" +self.toPoint
 				
 class ComponentChecker(threading.Thread):#This will check the status of components
 	def __init__(self):
@@ -530,7 +532,7 @@ class BackgroundMenu(QtGui.QMenu):
 		self.pos=None
 def getDefaultValues():
 	dict = {}
-	return dict
+	return dict#This will return the default values for a network settings
 
 def getStringFromFile(path):##This is the first function to be called for reading configurations for a xml file
 	try:
@@ -585,8 +587,8 @@ def parseNode(node, components):#To get the properties of a component
 	if node.type == "element" and node.name == "node":
 		child = node.children
 		comp = CompInfo()
-		print "Started reading components"
 		comp.alias = parseSingleValue(node, 'alias', False)
+		print "Started reading component:: "+comp.alias
 		comp.DirectoryItem.setText(comp.alias)
 		comp.endpoint = parseSingleValue(node, 'endpoint', False)
 		mandatory = 0
@@ -608,30 +610,25 @@ def parseNode(node, components):#To get the properties of a component
 					mandatory = mandatory + 8
 				elif child.name == "xpos":
 					x=parseSingleValue(child, 'value')
-					comp.x = float(x)
+					comp.x = float(x)*4
 					block_optional = block_optional + 1
 				elif child.name == "ypos":
-					comp.y = float(parseSingleValue(child, 'value'))
+					comp.y = float(parseSingleValue(child, 'value'))*4
 					block_optional = block_optional + 2
 				elif child.name == "dependence":
 					comp.dependences.append(parseSingleValue(child, 'alias'))
 				elif child.name == "icon":
 					parseIcon(child, comp)
+					block_optional = block_optional + 4
 				elif child.name == "ip":
 					comp.Ip=parseSingleValue(child, "value")
+					block_optional = block_optional + 8
 				elif stringIsUseful(str(child.properties)):
 					print 'ERROR when parsing rcmanager: '+str(child.name)+': '+str(child.properties)
 			child = child.next
-		if mandatory<15:
-			if   mandatory^15 == 1: print 'ERROR Not all mandatory labels were specified (workingDir)'
-			elif mandatory^15 == 2: print 'ERROR Not all mandatory labels were specified (upCommand)'
-			elif mandatory^15 == 4: print 'ERROR Not all mandatory labels were specified (downCommand)'
-			elif mandatory^15 == 8: print 'ERROR Not all mandatory labels were specified (configFile)'
-			raise NameError(mandatory)
-		if block_optional<3 and block_optional != 0:
-			if   block_optional^7 == 1: print 'ERROR Not all pos-radius labels were specified (xpos)'
-			elif block_optional^7 == 2: print 'ERROR Not all pos-radius labels were specified (ypos)'
-			raise NameError(block_optional)
+		
+		checkForCompChildren(comp,node)
+		
 		components.append(comp)
 	elif node.type == "text":
 		if stringIsUseful(str(node.properties)):
@@ -714,3 +711,26 @@ def getDefaultNode():
 	string=string+ '\t\t<ip value=" "/>\n'
 	string=string+ '\t</node>\n'
 	return string
+
+def getDefaultSettings():
+	string="\n"
+	string=string+'\t<generalInformation>\n'
+	string=string+'\t</generalInformation>\n'
+	return string
+
+def checkForCompChildren(comp,Xmlnode):#This will check whether the opened Doc have enough children to draw the things
+	if searchForChild(Xmlnode,"icon")==False:
+		print "No icon specified.Set to default Value"
+		comp.IconFilePath=os.getcwd()+"/share/rcmanager/1465594390_sign-add.png" #THis is the default icon can be changed by users choice
+		icon=QtGui.QPixmap(comp.IconFilePath)
+		comp.graphicsItem.setIcon(icon)
+		comp.DirectoryItem.setIcon(icon)
+
+def searchForChild(Xmlnode,Name):##Will search in tree for node with name Name
+	child=Xmlnode.children
+	while child is not None:
+		if child.type=="element" and child.name==Name:
+			return True
+		child=child.next
+
+	return False
