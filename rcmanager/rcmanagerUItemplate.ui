@@ -36,7 +36,7 @@
        </size>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -252,17 +252,6 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QToolButton" name="toolButton_6">
-            <property name="text">
-             <string>...</string>
-            </property>
-            <property name="icon">
-             <iconset>
-              <normaloff>share/rcmanager/refresh.png</normaloff>share/rcmanager/refresh.png</iconset>
-            </property>
-           </widget>
-          </item>
           <item row="3" column="0">
            <widget class="QToolButton" name="toolButton_8">
             <property name="text">
@@ -282,6 +271,17 @@
             <property name="icon">
              <iconset>
               <normaloff>share/rcmanager/1465394550_Settings.png</normaloff>share/rcmanager/1465394550_Settings.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QToolButton" name="toolButton_6">
+            <property name="text">
+             <string>...</string>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>share/rcmanager/refresh.png</normaloff>share/rcmanager/refresh.png</iconset>
             </property>
            </widget>
           </item>
@@ -585,7 +585,7 @@
           <x>0</x>
           <y>0</y>
           <width>236</width>
-          <height>265</height>
+          <height>173</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">

@@ -30,6 +30,7 @@ import libxml2, sys,threading,Ice ,time,os
 import SaveWarning,networkSettingUI
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
+from time import localtime, strftime##To log data
 
 
 try:
@@ -45,6 +46,21 @@ try:
 except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
+
+class Logger():##This will be used to log data
+	def __init__(self,logArea,file=None):
+		self.logArea=logArea
+		self.file=file
+	
+	def logData(self,text=" ",arg="G"):#To log into the textEdit widget
+		if arg=="G":
+			color=QtGui.QColor.fromRgb(0,255,0)
+		elif arg=="R":
+			color=QtGui.QColor.fromRgb(255,0,0)
+		time=strftime("%Y-%m-%d %H:%M:%S", localtime())
+		self.logArea.setTextColor(color)
+		self.logArea.append(time +"  >>  "+ text)
+
 
 class NetworkSettings(QtGui.QDialog):#This will show a dialog window for selecting the rcmanager tool settings
 	def __init__(self,parent=None):
@@ -122,7 +138,7 @@ class CodeEditor(Qsci.QsciScintilla):#For the dynamic code editing (Widget )
 
 class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 	"""docstring for ClassName"""
-	def __init__(self, view=None,Alias=None,parent=None):
+	def __init__(self, view=None,Alias="Component",parent=None):
 		QtGui.QGraphicsItem.__init__(self)
 		self.parent=parent
 		self.view=view
@@ -343,7 +359,8 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 		try:
 			ic=Ice.initialize(sys.argv)
 			self.aPrx = ic.stringToProxy(self.component.endpoint)
-			self.aPrx.ice_timeout(1)
+			if self.aPrx!= None:
+				self.aPrx.ice_timeout(1)
 		except:
 			print "Error creating proxy to " + self.component.endpoint
 			if len(self.component.endpoint) == 0:
@@ -351,7 +368,7 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 			raise
 
 	def run(self):
-		global global_ic
+		#global global_ic
 		while self.exit == False:
 			try:
 				self.aPrx.ice_ping()
@@ -417,7 +434,7 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 		self.workingdir = ''
 		self.compup = ''
 		self.compdown = ''
-		self.alias = ''
+		self.alias = 'Component'
 		self.dependences = []
 		self.configFile = ''
 		self.x = 0##This is not reliable >>Have to fix the bug
@@ -425,7 +442,10 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 		self.Ip=""
 		self.IconFilePath=""
 		self.status=False
-		self.CheckItem=ComponentChecker()
+
+		self.CommonProxy=commonBehaviorComponent(self)
+		
+		self.CheckItem=ComponentChecker()##Checking the status of component
 		self.graphicsItem=VisualNode(parent=self)
 		self.DirectoryItem=DirectoryItem(parent=self)
 		#self.Controller=ComponentController(parent=self)
@@ -478,13 +498,14 @@ class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the
 	def __init__(self,parent=None):
 		QtGui.QGraphicsScene.__init__(self)
 		self.parent=parent
-	
+			
 class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most side of the software
 
 	def __init__(self,parent=None,args=None):
 		QtGui.QPushButton.__init__(self,args)
 		self.parent=parent
 		self.args=args
+		self.connect(self,QtCore.SIGNAL("clicked()"),self.clickEvent)
 	def setIcon(self,arg):
 		self.Icon=QtGui.QIcon()
 		self.Icon.addPixmap(arg)
@@ -494,8 +515,55 @@ class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most si
 		self.parent.View.CompoPopUpMenu.setComponent(self.parent.graphicsItem)
 		self.parent.View.CompoPopUpMenu.popup(event.globalPos())
 
+	def clickEvent(self):#What happens when clicked
+		print "Clicked"+ self.parent.alias
+		index=self.parent.mainWindow.UI.tabWidget.currentIndex()
+		print index
+		self.parent.mainWindow.currentComponent=self.parent
+		if index==0:
+			self.parent.CommonProxy.setVisibility(True)
+			#print "Set visiblitiy true"
+		if index==1 or index==2:
+			self.parent.CommonProxy.setVisibility(False)
 
+##This class will communicate with the common behavior component
+class commonBehaviorComponent(threading.Thread):
+	def __init__(self,parent):
+		threading.Thread.__init__(self)
+		self.initialize()
+		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+		self.daemon = True
+		self.proxy=None
+		self.parent=parent
+		self.Frequency=0
+		self.TimeAwake=0
+		self.visible=False
+		self.refreshTime=.5
+		self.work=True
+		self.start()
+		
+	def initialize(self):
+		pass
+	def run(self):
+		#global global_ic
+		#print "started running"
+		while self.work == True:
+			if self.visible==True:
+				pass #Define here what ever have to be done during the first tab is displayed
+			time.sleep(self.refreshTime)
 
+	def setRefreshTime(self,time):#To be called to set how often the variables should be reset.
+		if time>10:
+			self.refreshTime=time
+		else:
+			self.refreshTime=10
+
+	def setVisibility(self,status=True):
+		self.mutex.lock()
+		self.visible = status
+		#print "visible change"+str(status)
+		self.mutex.unlock()
+	
 class ComponentMenu(QtGui.QMenu):
 	def  __init__(self,parent):
 
@@ -542,17 +610,21 @@ def getStringFromFile(path):##This is the first function to be called for readin
 
 	data = file.read()
 	return data
-def getDataFromString(data):#Data is a string in xml format containing information	
+def getDataFromString(data,logger):#Data is a string in xml format containing information	
 	components = []	
-	xmldoc = libxml2.parseDoc(data)
+	try:
+		xmldoc = libxml2.parseDoc(data)
+	except Exception,e:
+		logger.logData(str(e),"R")
+	
 	root = xmldoc.children
 	
 	if root is not None:
-		components, NetworkSettings = parsercmanager(root)
+		components, NetworkSettings = parsercmanager(root,logger)
 	xmldoc.freeDoc()
 	return components, NetworkSettings
 
-def parsercmanager(node): #Call seperate functions for general settings and nodes
+def parsercmanager(node,logger): #Call seperate functions for general settings and nodes
 	components = []
 	generalSettings=getDefaultValues()
 	if node.type == "element" and node.name == "rcmanager":
@@ -665,7 +737,7 @@ def parseIcon(node, comp):
 		comp.graphicsItem.setIcon(icon)
 		comp.DirectoryItem.setIcon(icon)
 
-def getXmlFromNetwork(dict, components):
+def getXmlFromNetwork(dict, components,logger):
 	string=''
 	string=string+'<?xml version="1.0" encoding="UTF-8"?>\n'
 	string=string+'<rcmanager>\n\n'
