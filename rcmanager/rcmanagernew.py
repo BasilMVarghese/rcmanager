@@ -63,7 +63,7 @@ class MainClass(QtGui.QMainWindow):
 		self.SaveWarning=rcmanagerConfignew.SaveWarningDialog(self)
 		
 		self.NetworkScene=rcmanagerConfignew.ComponentScene(self)##The graphicsScene
-		self.graphTree = rcmanagerConfignew.ComponentTree(self.UI.frame,self)##The graphicsNode
+		self.graphTree = rcmanagerConfignew.ComponentTree(self.UI.frame,mainclass=self)##The graphicsNode
 		self.graphTree.setScene(self.NetworkScene)
 		self.graphTree.setObjectName(_fromUtf8("graphicsView"))
 		self.UI.gridLayout_8.addWidget(self.graphTree,0,0,1,1)
@@ -79,6 +79,8 @@ class MainClass(QtGui.QMainWindow):
 		#To track the changes in the network both functionaly and visually
 		self.HadChanged=False
 		
+		self.connectionBuilder=rcmanagerConfignew.connectionBuilder(self,self.Logger)
+
 		#setting the code Editor
 		
 		self.CodeEditor=rcmanagerConfignew.CodeEditor(self.UI.tab_2)
@@ -97,6 +99,7 @@ class MainClass(QtGui.QMainWindow):
 		#self.UI.toolButton_6.setMouseTracking(True)
 		
 	def setupActions(self):##To setUp connection like saving,opening,etc
+		self.connect(self.UI.toolButton,QtCore.SIGNAL("hovered()"),self.hoverAddComponent)
 		self.connect(self.UI.toolButton_9,QtCore.SIGNAL("hovered()"),self.hoverXmlSettings)
 		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("hovered()"),self.hoverPrintDefaultNode)
 		self.connect(self.UI.toolButton_4,QtCore.SIGNAL("hovered()"),self.hoverPrintDefaultSettings)
@@ -116,11 +119,12 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.BackPopUpMenu.ActionUp,QtCore.SIGNAL("triggered(bool)"),self.upAllComponents)
 		self.connect(self.graphTree.BackPopUpMenu.ActionDown,QtCore.SIGNAL("triggered(bool)"),self.downAllComponents)
 		self.connect(self.graphTree.BackPopUpMenu.ActionSearch,QtCore.SIGNAL("triggered(bool)"),self.searchInsideTree)
-		self.connect(self.graphTree.BackPopUpMenu.ActionAdd,QtCore.SIGNAL("triggered(bool)"),self.addNode)		
+		self.connect(self.graphTree.BackPopUpMenu.ActionAdd,QtCore.SIGNAL("triggered(bool)"),self.addNewNode)		
 		self.connect(self.graphTree.BackPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.setNetworkSettings)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionDelete,QtCore.SIGNAL("triggered(bool)"),self.deleteSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionUp,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionDown,QtCore.SIGNAL("triggered(bool)"),self.downSelectedComponent)
-		self.connect(self.graphTree.CompoPopUpMenu.ActionNewConnection,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionNewConnection,QtCore.SIGNAL("triggered(bool)"),self.BuildNewConnection)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionControl,QtCore.SIGNAL("triggered(bool)"),self.controlComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.componentSettings)
 		self.connect(self.UI.toolButton_2,QtCore.SIGNAL("clicked()"),self.searchEnteredAlias)
@@ -131,9 +135,12 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.UI.toolButton_6,QtCore.SIGNAL("clicked()"),self.refreshCodeFromTree)
 		self.connect(self.UI.toolButton_9,QtCore.SIGNAL("clicked()"),self.editorFontSettings)
 		self.connect(self.UI.toolButton_10,QtCore.SIGNAL("clicked()"),self.getNetworkSetting)
+		self.connect(self.UI.toolButton,QtCore.SIGNAL("clicked()"),self.addNewComponent)
 		self.Logger.logData("Tool Started")
 
 	##The following function beginning with hover is for showing help of each Button
+	def hoverAddComponent(self):
+		self.UI.statusbar.showMessage("Add a new Component",3000)
 	def hoverXmlSettings(self):
 		self.UI.statusbar.showMessage("Edit Xml Settings",3000)
 	def hoverRefreshFromTree(self):
@@ -147,7 +154,18 @@ class MainClass(QtGui.QMainWindow):
 	def hoverRefreshFromXml(self):
 		self.UI.statusbar.showMessage("Update the Tree From the Xml Code",3000)
 
+	def BuildNewConnection(self):
 
+		self.graphTree.connectionBuidingStatus=True
+		print "Connection Building"
+		self.connectionBuilder.buildNewConnection()
+		self.connectionBuilder.setBeg(self.graphTree.CompoPopUpMenu.currentComponent.parent)
+		self.connectionBuilder.show()
+		
+
+
+	def deleteSelectedComponent(self):
+		self.deleteComponent(self.graphTree.CompoPopUpMenu.currentComponent.parent)
 
 	def tabIndexChanged(self):##This will make sure the common behavior is not working unneccessarily 
 		index=self.UI.tabWidget.currentIndex()
@@ -172,23 +190,30 @@ class MainClass(QtGui.QMainWindow):
 		self.CodeEditor.setText(string)
 		self.Logger.logData("Code Updated SucceFully from the graph")
 	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
-		List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()),self.Logger)
-		self.removeAllComponents()
-		self.networkSettings=Settings
-		self.componentList=List
-		try :
-			self.currentComponent=self.componentList[0]
-			self.ipCount()
-			self.setAllIpColor()
-			self.drawAllComponents()
-			self.setConnectionItems()
-			self.drawAllConnection()
-			self.setDirectoryItems()
-			self.FileOpenStatus=True
-			self.UserBuiltNetworkStatus=True
-			#self.HadChanged=False
-			self.Logger.logData("File Updated SuccessFully from the Code Editor")		
-		except Exception,e:
+		try:
+			List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()),self.Logger)
+		except:
+			self.Logger("Error while updating tree from Code" "R")
+		else:
+			self.removeAllComponents()
+			self.networkSettings=Settings
+			self.componentList=List
+			try :
+				self.currentComponent=self.componentList[0]
+				self.ipCount()
+				self.setAllIpColor()
+				self.setAllGraphicsData()
+				self.drawAllComponents()
+				self.setConnectionItems()
+				self.drawAllConnection()
+				self.setComponentVariables()
+				self.setDirectoryItems()
+				self.FileOpenStatus=True
+				self.UserBuiltNetworkStatus=True
+				#self.HadChanged=False
+				self.Logger.logData("File Updated SuccessFully from the Code Editor")
+				self.refreshCodeFromTree()		
+			except Exception,e:
 				self.Logger.logData("File updation from Code Failed "+str(e),"R")
 	def printTemplSettings(self):
 		pass
@@ -249,11 +274,14 @@ class MainClass(QtGui.QMainWindow):
 			raise Exception("Error During Alloting Ipcolors "+str(e))
 			  	
 
-	def setDirectoryItems(self):#This will set and draw all the directory components+I have added the job of defining a connection in here
+	def setComponentVariables(self):#Temperory function to be edited later
 		for x in self.componentList.__iter__():
 			x.View=self.graphTree
 			x.mainWindow=self				
 			self.connect(x,QtCore.SIGNAL("networkChanged()"),self.haveChanged)
+
+	def setDirectoryItems(self):#This will set and draw all the directory components+I have added the job of defining a connection in here
+		for x in self.componentList.__iter__():
 			x.DirectoryItem.setParent(self.UI.scrollAreaWidgetContents)
 			self.UI.verticalLayout.insertWidget(self.UI.verticalLayout.count()-1,x.DirectoryItem)
 		#print "Count is "+ str(self.UI.verticalLayout.count())
@@ -279,6 +307,10 @@ class MainClass(QtGui.QMainWindow):
 			pass
 	def upComponent(self,component):#Just Up the component
 		try:
+			if component.CheckItem.haveStarted()==False:
+				component.CheckItem.initializeComponent()
+			if component.CheckItem.haveStarted()==False:
+				self.Logger("Component "+component.alias+" Cannot be Monitored because of bad Proxy setting(Error ignored)","R")	
 			proc=QtCore.QProcess()
 			proc.startDetached(component.compup)
 			self.Logger.logData(component.alias+" ::started")
@@ -368,17 +400,9 @@ class MainClass(QtGui.QMainWindow):
 		connection.toX,connection.toY=rcmanagerConfignew.findPortPosition(toComponent,toComponentPort)	
 
 	def removeAllComponents(self):#This removes all the components from everywhere#BUUUUUG
-		for x in self.componentList.__iter__():
-			self.NetworkScene.removeItem(x.graphicsItem)
-			x.DirectoryItem.hide()
-			self.UI.verticalLayout.removeWidget(x.DirectoryItem)
-			del x.DirectoryItem
-			self.UI.scrollAreaWidgetContents.destroy(destroyWindow=False,destroySubWindows=True)
-			#print "Deleted  "+ x.alias
-			for y in x.asBeg.__iter__():
-				self.NetworkScene.removeItem(y)
-		self.networkSettings=rcmanagerConfignew.getDefaultValues()
-		del self.componentList[:]	
+		len=self.componentList.__len__()
+		for x in range(len):
+			self.deleteComponent(self.componentList[len-1-x])
 	def openXmlFile(self,terminalArg=False,UserHaveChoice=True):#To open the xml files ::Unfinished
 		Settings=rcmanagerConfignew.getDefaultValues()
 		List=[]
@@ -405,11 +429,13 @@ class MainClass(QtGui.QMainWindow):
 			try :
 				self.currentComponent=self.componentList[0]
 				self.StatusBarFileNameWrite(self.filePath)
+				self.setAllGraphicsData()
 				self.ipCount()
 				self.setAllIpColor()
 				self.drawAllComponents()
 				self.setConnectionItems()
 				self.drawAllConnection()
+				self.setComponentVariables()
 				self.setDirectoryItems()
 				self.FileOpenStatus=True
 				self.UserBuiltNetworkStatus=False
@@ -417,6 +443,9 @@ class MainClass(QtGui.QMainWindow):
 				self.Logger.logData("File "+self.filePath +"  Read successfully")		
 			except Exception,e:
 				self.Logger.logData("Opening File Failed::"+str(e),"R")
+	def setAllGraphicsData(self):
+		for x in self.componentList:
+			x.setGraphicsData()
 	def StatusBarFileNameWrite(self,string):
 		Label=QtGui.QLabel(string)
 		self.UI.statusbar.addWidget(Label)
@@ -451,23 +480,47 @@ class MainClass(QtGui.QMainWindow):
 		zoomingfactor=math.pow(1.2,diff)
 		#print zoomingfactor
 		self.graphTree.scale(zoomingfactor,zoomingfactor)
-	def addNode(self):#For adding a new node in the network >>Unfinished
-		
-		pos=self.graphTree.mapToScene(self.graphTree.BackPopUpMenu.pos)
-		if pos==None:
-			pos=QtCore.QPointF()
-		component=rcmanagerConfignew.CompInfo()
+	
+	def addNewNode(self):##Called where right clicked and seleceted to add a new node
+		pos=self.graphTree.BackPopUpMenu.pos
+		scenePos=self.graphTree.mapToScene(pos)
+		self.addNewComponent(scenePos)	
+
+	def addNewComponent(self,pos=QtCore.QPointF()):#The final function which takes care of adding new component default zero
+	
+		component=rcmanagerConfignew.CompInfo(view=self.graphTree,mainWindow=self)
 		self.componentList.append(component)
 		component.x=pos.x()
 		component.y=pos.y()
 		component.graphicsItem.setPos(pos)
+		self.NetworkScene.addItem(component.graphicsItem)
 		self.refreshCodeFromTree()
-		self.refreshTreeFromCode()
+		component.DirectoryItem.setParent(self.UI.scrollAreaWidgetContents)
+		self.UI.verticalLayout.insertWidget(self.UI.verticalLayout.count()-1,component.DirectoryItem)
 
+	def deleteComponent(self,component):##This will delete the component Not completed 
+		
+		#	print component.alias
+		
+		for x in component.asBeg:
+			x.toComponent.asEnd.remove(x)
+			self.NetworkScene.removeItem(x)
+		for x in component.asEnd:
+			x.fromComponent.asBeg.remove(x)
+			self.NetworkScene.removeItem(x)
 
-	def addComponent(self):#adding new component on the right component list
-		pass
-	
+		component.CheckItem.stop()
+		self.NetworkScene.removeItem(component.graphicsItem)
+		self.NetworkScene.update()
+		component.DirectoryItem.hide()
+		
+		for x in self.componentList.__iter__():
+			if component.graphicsItem==x.graphicsItem:
+				self.componentList.remove(component)
+		self.refreshCodeFromTree()
+		self.Logger.logData("Deleted the Component:: "+component.alias+" SuccessFully")
+		#print self.componentList.__len__()
+
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)

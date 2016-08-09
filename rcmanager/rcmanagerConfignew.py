@@ -27,7 +27,7 @@
 
 # Importamos el modulo libxml2
 import libxml2, sys,threading,Ice ,time,os 
-import SaveWarning,networkSettingUI
+import SaveWarning,networkSettingUI,SettingConnection
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
 from time import localtime, strftime##To log data
@@ -61,7 +61,48 @@ class Logger():##This will be used to log data
 		self.logArea.setTextColor(color)
 		self.logArea.append(time +"  >>  "+ text)
 
+class connectionBuilder(QtGui.QDialog):## This is used to set connection between two different dialogs
+	def __init__(self,parent,logger):
 
+		QtGui.QDialog.__init__(self)
+		
+		self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)		
+		self.logger=logger
+		self.parent=parent
+		self.UI=SettingConnection.Ui_Dialog()
+		self.UI.setupUi(self)
+		self.connection=None
+		self.fromComponent=None
+		self.toComponent=None
+		self.BuildingStatus=False
+		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.SaveConnection)
+		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.closeWithoutSaving)
+	def buildNewConnection(self):
+		self.connection=NodeConnection()
+		self.BuildingStatus=True
+	def setBeg(self,component):
+		self.UI.lineEdit_2.setText(component.alias)
+		self.connection.fromComponent=component
+		self.fromComponent=component
+	def setEnd(self,component):
+		self.UI.lineEdit.setText(component.alias)
+		self.connection.toComponent=component
+		self.toComponent=component
+	def SaveConnection(self):
+		self.toComponent.asEnd.append(self.connection)
+		self.fromComponent.asBeg.append(self.connection)
+		self.parent.NetworkScene.addItem(self.connection)
+		self.close()
+		self.parent.NetworkScene.update()
+		self.parent.refreshCodeFromTree()
+		self.logger.logData("Connection Made From "+self.fromComponent.alias+" to "+self.toComponent.alias)
+		self.BuildingStatus=False
+		self.UI.lineEdit.setText("")
+		self.UI.lineEdit_2.setText("")
+	def closeWithoutSaving(self):
+		self.close()
+		self.UI.lineEdit.setText("")
+		self.UI.lineEdit_2.setText("")
 class NetworkSettings(QtGui.QDialog):#This will show a dialog window for selecting the rcmanager tool settings
 	def __init__(self,parent=None):
 		QtGui.QDialog.__init__(self)
@@ -144,12 +185,12 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		self.view=view
 		self.Alias=Alias
 		self.pos=None
-		self.IpColor=None
+		self.IpColor=QtGui.QColor.fromRgb(255,255,255)
 		self.aliveStatus=False
 		self.detailsShower=None
 		self.setFlag(QtGui.QGraphicsItem.ItemIsMovable)
 		self.setAcceptHoverEvents(True)
-		self.Icon=None
+		self.Icon=QtGui.QPixmap(getDefaultIconPath())
 		#self.setFlag(QtGui.QGraphicsItem.ItemIsSelectable)
 		self.setZValue(1)#To make sure the Nodes are always on top of connections
 	def mouseMoveEvent(self,event):
@@ -196,7 +237,7 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 		self.drawStatus(painter)
 		self.drawIcon(painter)
 		self.writeAlias(painter)
-	def setIcon(self,icon):
+	def setIcon(self,icon=None):
 		self.Icon=icon
 	def paintMainShape(self,painter): ##This will draw the basic shape of a node.The big square and its containing elements
 		pen=QtGui.QPen(QtGui.QColor.fromRgb(0,0,0))
@@ -305,8 +346,8 @@ def findWhichPorts(fromComponent,toComponent):#This will select out of the 4 por
 class NodeConnection(QtGui.QGraphicsItem):
 	def __init__(self):
 		QtGui.QGraphicsItem.__init__(self)
-		self.fromComponent=None
-		self.toComponent=None
+		self.fromComponent=None##CompInfo Class
+		self.toComponent=None##CompInfo Class
 		self.fromX=0
 		self.fromY=0
 		self.toX=0
@@ -319,6 +360,7 @@ class NodeConnection(QtGui.QGraphicsItem):
 		self.Line=None
 		self.fromPoint=QtCore.QPointF()
 		self.toPoint=QtCore.QPointF()	
+		self.arrowLine=QtCore.QLineF()
 	def boundingRect(self):##TO Be modified..Because error prone when vertical and horizontal
 		if abs(self.toX-self.fromX)<5:
 			width=5
@@ -338,51 +380,55 @@ class NodeConnection(QtGui.QGraphicsItem):
 		self.toPoint.setY(self.toY)
 		self.Line=QtCore.QLineF(self.fromPoint,self.toPoint)
 		painter.drawLine(self.Line)
+		self.drawArrows(painter)
 		#painter.drawRect(self.rect)
-	def drawarrows(self,painter):#To draw the arrows in the connections::Unfinished
-		cener=(self.fromPoint+self.toPoint)/2
+	def drawArrows(self,painter):#To 	draw the arrows in the connections::Unfinished
+		pass
 	def hoverEnterEvent(self,Event):#Unfinished
 		print "Mouse Hovering in connection from :" +self.fromComponent+" to :" +self.toPoint
 				
 class ComponentChecker(threading.Thread):#This will check the status of components
-	def __init__(self):
+	def __init__(self,component):
 		threading.Thread.__init__(self)
-		self.component=None
+		self.component=component
 		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 		self.daemon = True
 		self.reset()
 		self.exit = False
 		self.alive = False
 		self.aPrx = None
-	def initializeComponent(self,component):#Called to set the component and to initialize the Ice proxy
-		self.component=component
+		self.started=False
+	def haveStarted(self):
+		return self.started
+	def initializeComponent(self):#Called to set the component and to initialize the Ice proxy
 		try:
 			ic=Ice.initialize(sys.argv)
 			self.aPrx = ic.stringToProxy(self.component.endpoint)
 			if self.aPrx!= None:
 				self.aPrx.ice_timeout(1)
-		except:
+			self.started=True
+		except :
 			print "Error creating proxy to " + self.component.endpoint
 			if len(self.component.endpoint) == 0:
 				print 'please, provide an endpoint'
-			raise
 
 	def run(self):
 		#global global_ic
 		while self.exit == False:
-			try:
-				self.aPrx.ice_ping()
-				self.mutex.lock()
-				if self.alive==False:
-					self.changed()	
-				self.alive = True
-				self.mutex.unlock()
-			except:
-				self.mutex.lock()
-				if self.alive==True:
-					self.changed()
-				self.alive = False
-				self.mutex.unlock()
+			if self.started:
+				try:
+					self.aPrx.ice_ping()
+					self.mutex.lock()
+					if self.alive==False:
+						self.changed()	
+					self.alive = True
+					self.mutex.unlock()
+				except:
+					self.mutex.lock()
+					if self.alive==True:
+						self.changed()
+					self.alive = False
+					self.mutex.unlock()
 			#self.mutex.lock()
 			#print self.component.alias +" ::Status:: "+ str(self.alive)
 			#self.mutex.unlock()
@@ -397,7 +443,9 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 		self.mutex.unlock()
 		return r
 	def stop(self):
+		self.mutex.lock()
 		self.exit = True
+		self.mutex.unlock()
 	def runrun(self):
 		if not self.isAlive(): self.start()#Note this is different isalive
 	def changed(self):
@@ -423,11 +471,11 @@ class ShowItemDetails(QtGui.QWidget):##This contains the GUI and internal proces
 # Component information container class.
 #
 class CompInfo(QtCore.QObject):##This contain the general Information about the Components which is read from the files and created
-	def __init__(self):
+	def __init__(self,view=None,mainWindow=None):
 
 		QtCore.QObject.__init__(self)
-		self.View=None
-		self.mainWindow=None
+		self.View=view
+		self.mainWindow=mainWindow
 		self.asEnd=[]#This is the list of connection where the node act as the ending point
 		self.asBeg=[]#This is the list of connection where the node act as the beginning point
 		self.endpoint = ''
@@ -445,7 +493,7 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 
 		self.CommonProxy=commonBehaviorComponent(self)
 		
-		self.CheckItem=ComponentChecker()##Checking the status of component
+		self.CheckItem=ComponentChecker(self)##Checking the status of component
 		self.graphicsItem=VisualNode(parent=self)
 		self.DirectoryItem=DirectoryItem(parent=self)
 		#self.Controller=ComponentController(parent=self)
@@ -470,6 +518,7 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 	def __init__(self,parent,mainclass):
 		self.viewportAnchor=QtGui.QGraphicsView.AnchorUnderMouse
 		QtGui.QGraphicsView.__init__(self,parent)
+		self.connectionBuidingStatus=False
 		self.mainclass=mainclass#This object is the mainClass from rcmanager Module
 		self.CompoPopUpMenu=ComponentMenu(self.mainclass)
 		self.BackPopUpMenu=BackgroundMenu(self.mainclass)
@@ -490,8 +539,18 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 			self.CompoPopUpMenu.setComponent(item)
 			self.CompoPopUpMenu.popup(GloPos)
 		else:
-			self.BackPopUpMenu.pos=pos
+			self.BackPopUpMenu.setPos(pos)
 			self.BackPopUpMenu.popup(GloPos)
+
+	def mousePressEvent(self,event):
+		if self.connectionBuidingStatus==True:
+			pos=event.pos()
+			item=self.itemAt(pos)		
+			if isinstance(item,VisualNode):
+				self.mainclass.connectionBuilder.setEnd(item.parent)
+			self.connectionBuidingStatus=False
+		if self.connectionBuidingStatus==False:
+			QtGui.QGraphicsView.mousePressEvent(self,event)
 
 
 class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the graph
@@ -506,6 +565,8 @@ class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most si
 		self.parent=parent
 		self.args=args
 		self.connect(self,QtCore.SIGNAL("clicked()"),self.clickEvent)
+		QtGui.QPushButton.setIcon(self,QtGui.QIcon(QtGui.QPixmap(getDefaultIconPath())))
+		self.setText("Component")
 	def setIcon(self,arg):
 		self.Icon=QtGui.QIcon()
 		self.Icon.addPixmap(arg)
@@ -568,11 +629,14 @@ class ComponentMenu(QtGui.QMenu):
 	def  __init__(self,parent):
 
 		QtGui.QMenu.__init__(self,parent)
+		
 		self.ActionUp=QtGui.QAction("Up",parent)
 		self.ActionDown=QtGui.QAction("Down",parent)
 		self.ActionSettings=QtGui.QAction("Settings",parent)
 		self.ActionControl=QtGui.QAction("Control",parent)
 		self.ActionNewConnection=QtGui.QAction("New Connection",parent)
+		self.ActionDelete=QtGui.QAction("Delete",parent)
+		self.addAction(self.ActionDelete)
 		self.addAction(self.ActionUp)
 		self.addAction(self.ActionDown)
 		self.addAction(self.ActionNewConnection)
@@ -598,6 +662,8 @@ class BackgroundMenu(QtGui.QMenu):
 		self.addAction(self.ActionAdd)
 		self.addAction(self.ActionSearch)
 		self.pos=None
+	def setPos(self,pos):
+		self.pos=pos
 def getDefaultValues():
 	dict = {}
 	return dict#This will return the default values for a network settings
@@ -614,10 +680,9 @@ def getDataFromString(data,logger):#Data is a string in xml format containing in
 	components = []	
 	try:
 		xmldoc = libxml2.parseDoc(data)
+		root = xmldoc.children
 	except Exception,e:
 		logger.logData(str(e),"R")
-	
-	root = xmldoc.children
 	
 	if root is not None:
 		components, NetworkSettings = parsercmanager(root,logger)
@@ -632,17 +697,17 @@ def parsercmanager(node,logger): #Call seperate functions for general settings a
 		while child is not None:
 			if child.type == "element":
 				if child.name == "generalInformation":
-					parseGeneralInformation(child, generalSettings)
+					parseGeneralInformation(child, generalSettings,logger)
 				elif child.name == "node":
-					parseNode(child, components)
+					parseNode(child, components,logger)
 				elif stringIsUseful(str(node.properties)):
 					print 'ERROR when parsing rcmanager: '+str(child.name)+': '+str(child.properties)
 			child = child.next
 	return components, generalSettings
 
-def parseGeneralInformation(node, dict): ##Takes care of reading the general information about the network tree
+def parseGeneralInformation(node, dict,logger): ##Takes care of reading the general information about the network tree
 	if node.type == "element" and node.name == "generalInformation":
-		print "General Information read"
+		logger.logData("General Information Read")
 
 def parseGeneralValues(node, dict, arg):##Called to read the attribute values of elements of General Values
 	if node.children != None: print 'WARNING: No children expected'
@@ -655,65 +720,63 @@ def checkForMoreProperties(node):
 	if node.properties != None: print 'WARNING: Attributes unexpected: ' + str(node.properties)
 
 
-def parseNode(node, components):#To get the properties of a component
+def parseNode(node, components,logger):#To get the properties of a component
 	if node.type == "element" and node.name == "node":
 		child = node.children
 		comp = CompInfo()
 		comp.alias = parseSingleValue(node, 'alias', False)
-		print "Started reading component:: "+comp.alias
+		#print "Started reading component:: "+comp.alias
 		comp.DirectoryItem.setText(comp.alias)
 		comp.endpoint = parseSingleValue(node, 'endpoint', False)
-		mandatory = 0
-		block_optional = 0
-		
 		while child is not None:
 			if child.type == "element":
 				if child.name == "workingDir":
 					comp.workingdir = parseSingleValue(child, 'path')
-					mandatory = mandatory + 1
 				elif child.name == "upCommand":
 					comp.compup = parseSingleValue(child, 'command')
-					mandatory = mandatory + 2
 				elif child.name == "downCommand":
 					comp.compdown = parseSingleValue(child, 'command')
-					mandatory = mandatory + 4
 				elif child.name == "configFile":
 					comp.configFile = parseSingleValue(child, 'path')
-					mandatory = mandatory + 8
 				elif child.name == "xpos":
 					x=parseSingleValue(child, 'value')
-					comp.x = float(x)*4
-					block_optional = block_optional + 1
+					try :
+						comp.x=float(x)
+					except :
+						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
 				elif child.name == "ypos":
-					comp.y = float(parseSingleValue(child, 'value'))*4
-					block_optional = block_optional + 2
+					y = float(parseSingleValue(child, 'value'))*4					
+					try :
+						comp.y=float(y)
+					except :
+						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
+				
 				elif child.name == "dependence":
 					comp.dependences.append(parseSingleValue(child, 'alias'))
 				elif child.name == "icon":
 					parseIcon(child, comp)
-					block_optional = block_optional + 4
 				elif child.name == "ip":
 					comp.Ip=parseSingleValue(child, "value")
-					block_optional = block_optional + 8
 				elif stringIsUseful(str(child.properties)):
 					print 'ERROR when parsing rcmanager: '+str(child.name)+': '+str(child.properties)
 			child = child.next
 		
-		checkForCompChildren(comp,node)
-		
+		checkForCompChildren(comp,node)##This function si there to verify All neccessary details are added 
 		components.append(comp)
+
 	elif node.type == "text":
 		if stringIsUseful(str(node.properties)):
 			print '    tssssssss'+str(node.properties)
 	else:
 		print "error: "+str(node.name)
 	
-	comp.setGraphicsData()
-	comp.CheckItem.initializeComponent(comp)
 	comp.CheckItem.start()
-	print "Got information of " +comp.alias
+
+
 def parseSingleValue(node, arg, doCheck=True, optional=False):
+	
 	if node.children != None and doCheck == True: print 'WARNING: No children expected'+str(node)
+	
 	if not node.hasProp(arg) and not optional:
 		print 'WARNING: ' + arg + ' attribute expected'
 	else:
@@ -751,8 +814,8 @@ def getXmlFromNetwork(dict, components,logger):
 		comp.x=comp.graphicsItem.x()
 		comp.y=comp.graphicsItem.y()
 		string=string+'\n\t<node alias="' + comp.alias + '" endpoint="' + comp.endpoint + '">\n'
-		for dep in comp.dependences:
-			string=string+'\t\t<dependence alias="' + dep + '" />\n'
+		for dep in comp.asEnd:
+			string=string+'\t\t<dependence alias="' + dep.fromComponent.alias + '" />\n'
 		string=string+'\t\t<workingDir path="' + comp.workingdir + '" />\n'
 		string=string+'\t\t<upCommand command="' + comp.compup + '" />\n'
 		string=string+'\t\t<downCommand command="' + comp.compdown + '" />\n'
@@ -806,3 +869,6 @@ def searchForChild(Xmlnode,Name):##Will search in tree for node with name Name
 		child=child.next
 
 	return False
+
+def getDefaultIconPath():
+	return os.getcwd()+"/share/rcmanager/1465594390_sign-add.png" #THis is the default icon can be changed by users choice
