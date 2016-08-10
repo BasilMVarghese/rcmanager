@@ -190,6 +190,7 @@ class MainClass(QtGui.QMainWindow):
 		self.CodeEditor.setText(string)
 		self.Logger.logData("Code Updated SucceFully from the graph")
 	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
+		print "Refreshing"
 		try:
 			List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()),self.Logger)
 		except:
@@ -418,31 +419,10 @@ class MainClass(QtGui.QMainWindow):
 			
 			string=rcmanagerConfignew.getStringFromFile(self.filePath)
 			self.CodeEditor.setText(string)
-			List , Settings=rcmanagerConfignew.getDataFromString(string,self.Logger)			
-			
-		except Exception,e:
-			self.Logger.logData("Opening File Failed::"+str(e),"R")
-		else:
-			self.removeAllComponents()
-			self.networkSettings=Settings
-			self.componentList=List
-			try :
-				self.currentComponent=self.componentList[0]
-				self.StatusBarFileNameWrite(self.filePath)
-				self.setAllGraphicsData()
-				self.ipCount()
-				self.setAllIpColor()
-				self.drawAllComponents()
-				self.setConnectionItems()
-				self.drawAllConnection()
-				self.setComponentVariables()
-				self.setDirectoryItems()
-				self.FileOpenStatus=True
-				self.UserBuiltNetworkStatus=False
-				self.HadChanged=False
-				self.Logger.logData("File "+self.filePath +"  Read successfully")		
-			except Exception,e:
-				self.Logger.logData("Opening File Failed::"+str(e),"R")
+		except:
+			self.Logger.logData("Couldn't Read from File")
+		self.refreshTreeFromCode()
+
 	def setAllGraphicsData(self):
 		for x in self.componentList:
 			x.setGraphicsData()

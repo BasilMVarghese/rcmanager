@@ -741,13 +741,13 @@ def parseNode(node, components,logger):#To get the properties of a component
 				elif child.name == "xpos":
 					x=parseSingleValue(child, 'value')
 					try :
-						comp.x=float(x)
+						comp.x=float(x)*4
 					except :
 						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
 				elif child.name == "ypos":
 					y = float(parseSingleValue(child, 'value'))*4					
 					try :
-						comp.y=float(y)
+						comp.y=float(y)*4
 					except :
 						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
 				
