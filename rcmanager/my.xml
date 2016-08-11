@@ -3,7 +3,7 @@
 <rcmanager>
 
 	<generalInformation>
-		
+
 	</generalInformation>
 
 	<node alias="SIM" endpoint="differentialrobot:tcp -h localhost -p 10004">
@@ -18,7 +18,7 @@
 	</node>
 
 	<node alias="Controller" endpoint="CommonBehavior.Endpoints:tcp -p 1">
-  <dependence alias="SIM" />
+ 		 <dependence alias="SIM" />
 		<workingDir path="/home/robocomp/" />
 		<upCommand command="rcremote 127.0.0.1 controller /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/ /home/robocomp/robocomp/components/robocomp-robolab/components/keyboardrobotcontroller/src/keyboardrobotcontroller.py" />
 		<downCommand command="pkill -9 -f keyboardrobotcontroller.py" />

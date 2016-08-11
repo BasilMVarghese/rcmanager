@@ -52,7 +52,7 @@ class MainClass(QtGui.QMainWindow):
 		self.currentComponent=None
 		self.showMaximized()
 		self.componentList=[]
-		self.networkSettings=rcmanagerConfignew.getDefaultValues()
+		self.networkSettings=rcmanagerConfignew.NetworkValues()
 		
 
 		self.UI=rcmanagerUItemplate.Ui_MainWindow()
@@ -190,11 +190,11 @@ class MainClass(QtGui.QMainWindow):
 		self.CodeEditor.setText(string)
 		self.Logger.logData("Code Updated SucceFully from the graph")
 	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
-		print "Refreshing"
+		#print "Refreshing"
 		try:
 			List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()),self.Logger)
 		except:
-			self.Logger("Error while updating tree from Code" "R")
+			self.Logger.logData("Error while updating tree from Code", "R")
 		else:
 			self.removeAllComponents()
 			self.networkSettings=Settings
@@ -293,39 +293,13 @@ class MainClass(QtGui.QMainWindow):
 		print "Controlling the current component"
 	def downSelectedComponent(self):
 		component=self.graphTree.CompoPopUpMenu.currentComponent
-		self.downComponent(component.parent)
-	def downComponent(self,component):#To down a particular component
-		try:
-			proc=QtCore.QProcess()
-			proc.startDetached(component.compdown)
-			self.Logger.logData(component.alias+" ::Killed")
-		except Exception, e:
-			self.Logger.logData("Cannot Kill"+str(e),"R")
-			raise e
-		else:
-			pass
-		finally:
-			pass
-	def upComponent(self,component):#Just Up the component
-		try:
-			if component.CheckItem.haveStarted()==False:
-				component.CheckItem.initializeComponent()
-			if component.CheckItem.haveStarted()==False:
-				self.Logger("Component "+component.alias+" Cannot be Monitored because of bad Proxy setting(Error ignored)","R")	
-			proc=QtCore.QProcess()
-			proc.startDetached(component.compup)
-			self.Logger.logData(component.alias+" ::started")
-		except Exception, e:
-			self.Logger.logData("Cannot write"+str(e),"R")
-			raise e
-		else:
-			pass
-		finally:
-			pass
+		rcmanagerConfignew.downComponent(component.parent,self.Logger)
+	
+	
 
 	def upSelectedComponent(self):#This will up a selected component
 		component=self.graphTree.CompoPopUpMenu.currentComponent
-		self.upComponent(component.parent)
+		rcmanagerConfignew.upComponent(component.parent,self.Logger)
 	def setNetworkSettings(self):#To edit the network tree general settings
 		print "network setting editing"	
 	def searchInsideTree(self):#To search a particular component from tree
@@ -333,13 +307,13 @@ class MainClass(QtGui.QMainWindow):
 	def upAllComponents(self):#To set all components in up position
 		for x in self.componentList.__iter__():
 			try:
-				self.upComponent(x)
+				rcmanagerConfignew.upComponent(x,self.Logger)
 			except Exception, e:
 				pass
 	def downAllComponents(self):#To set all components in down position
 		for x in self.componentList.__iter__():
 			try:
-				self.downComponent(x)
+				rcmanagerConfignew.downComponent(x,self.Logger)
 			except Exception,e :
 				pass
 	def simulatorSettings(self):##To edit the simulatorSettings:Unfinished
@@ -405,7 +379,7 @@ class MainClass(QtGui.QMainWindow):
 		for x in range(len):
 			self.deleteComponent(self.componentList[len-1-x])
 	def openXmlFile(self,terminalArg=False,UserHaveChoice=True):#To open the xml files ::Unfinished
-		Settings=rcmanagerConfignew.getDefaultValues()
+		Settings=rcmanagerConfignew.NetworkValues()
 		List=[]
 		try:
 			if self.HadChanged :# To make sure the data we have been working on have been saved
