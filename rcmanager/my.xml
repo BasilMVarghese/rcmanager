@@ -13,7 +13,6 @@
 		<configFile path="" />
 		<xpos value="0.0" />
 		<ypos value="0.0" />
-		<icon value="/media/h20/2A5037F65037C6FB/BASIL/FOOT PRINTS/Year 2016/GSOC/ICONS/car.png"/>
 		<ip value="127.0.0.12"/>
 	</node>
 
@@ -25,7 +24,6 @@
 		<configFile path="/etc/config" />
 		<xpos value="200.0" />
 		<ypos value="-200.0" />
-		<icon value="/home/h20/Coding /Robocomp/GSOC_TOOL/rcmanager/rcmanager/share/rcmanager/1465594390_sign-add.png"/>
 		<ip value="127.0.0.1"/>
 	</node>
 

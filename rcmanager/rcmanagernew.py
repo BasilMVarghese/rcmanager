@@ -121,6 +121,7 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.BackPopUpMenu.ActionSearch,QtCore.SIGNAL("triggered(bool)"),self.searchInsideTree)
 		self.connect(self.graphTree.BackPopUpMenu.ActionAdd,QtCore.SIGNAL("triggered(bool)"),self.addNewNode)		
 		self.connect(self.graphTree.BackPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.setNetworkSettings)
+		self.connect(self.graphTree.BackPopUpMenu.ActionNewGroup,QtCore.SIGNAL("triggered(bool)"),self.AddNewGroup)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionDelete,QtCore.SIGNAL("triggered(bool)"),self.deleteSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionUp,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionDown,QtCore.SIGNAL("triggered(bool)"),self.downSelectedComponent)
@@ -163,6 +164,7 @@ class MainClass(QtGui.QMainWindow):
 		self.connectionBuilder.show()
 		
 
+	def addNewGroup(self):
 
 	def deleteSelectedComponent(self):
 		self.deleteComponent(self.graphTree.CompoPopUpMenu.currentComponent.parent)
@@ -193,8 +195,8 @@ class MainClass(QtGui.QMainWindow):
 		#print "Refreshing"
 		try:
 			List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()),self.Logger)
-		except:
-			self.Logger.logData("Error while updating tree from Code", "R")
+		except Exception,e:
+			self.Logger.logData("Error while updating tree from Code::"+str(e), "R")
 		else:
 			self.removeAllComponents()
 			self.networkSettings=Settings

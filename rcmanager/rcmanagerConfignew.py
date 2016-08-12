@@ -703,10 +703,13 @@ class BackgroundMenu(QtGui.QMenu):
 		self.ActionDown=QtGui.QAction("Down All",parent)
 		self.ActionSearch=QtGui.QAction("Search",parent)
 		self.ActionAdd=QtGui.QAction("Add",parent)
+		self.ActionNewGroup=QtGui.QAction("New Group",parent)
+
 		self.addAction(self.ActionUp)
 		self.addAction(self.ActionDown)
-		self.addAction(self.ActionSettings)
 		self.addAction(self.ActionAdd)
+		self.addAction(self.ActionNewGroup)
+		self.addAction(self.ActionSettings)
 		self.addAction(self.ActionSearch)
 		self.pos=None
 	def setPos(self,pos):
@@ -775,12 +778,6 @@ def parseGeneralInformation(node, generalSettings,logger): ##Takes care of readi
 
 		logger.logData("General Information Successfully read")
 
-def parseGeneralValues(node, dict, arg):##Called to read the attribute values of elements of General Values
-	if node.children != None: print 'WARNING: No children expected'
-	for attr in arg:
-		if node.hasProp(attr):
-			dict[attr] = node.prop(attr)
-			node.unsetProp(attr)
 
 def checkForMoreProperties(node):
 	if node.properties != None: print 'WARNING: Attributes unexpected: ' + str(node.properties)
@@ -852,6 +849,17 @@ def parseNode(node, components,generalSettings,logger):#To get the properties of
 	
 	comp.CheckItem.start()
 
+def stringIsUseful(string):
+	if len(string) == 0: return False
+	if string[0] == '#': return False
+
+	s1 = string
+	s1 = s1.replace(' ', '')
+	s1 = s1.replace('\t', '')
+	s1 = s1.replace('\n', '')
+
+	if len(s1) == 0: return False
+	return True
 
 def parseSingleValue(node, arg, doCheck=True, optional=False):
 	
