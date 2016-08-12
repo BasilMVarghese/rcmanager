@@ -52,7 +52,7 @@ class MainClass(QtGui.QMainWindow):
 		self.currentComponent=None
 		self.showMaximized()
 		self.componentList=[]
-		self.networkSettings=rcmanagerConfignew.getDefaultValues()
+		self.networkSettings=rcmanagerConfignew.NetworkValues()
 		
 
 		self.UI=rcmanagerUItemplate.Ui_MainWindow()
@@ -79,10 +79,14 @@ class MainClass(QtGui.QMainWindow):
 		#To track the changes in the network both functionaly and visually
 		self.HadChanged=False
 		
-		self.connectionBuilder=rcmanagerConfignew.connectionBuilder(self,self.Logger)
+		self.connectionBuilder=rcmanagerConfignew.connectionBuilder(self,self.Logger)##This will take care of connection building between components
 
+		
+		self.groupBuilder=rcmanagerConfignew.GroupBuilder(self,self.Logger)##It will help to create a new group
 		#setting the code Editor
 		
+		self.groupSelector=rcmanagerConfignew.GroupSelector(self,self.Logger)
+
 		self.CodeEditor=rcmanagerConfignew.CodeEditor(self.UI.tab_2)
 		self.UI.verticalLayout_2.addWidget(self.CodeEditor)
 
@@ -121,12 +125,19 @@ class MainClass(QtGui.QMainWindow):
 		self.connect(self.graphTree.BackPopUpMenu.ActionSearch,QtCore.SIGNAL("triggered(bool)"),self.searchInsideTree)
 		self.connect(self.graphTree.BackPopUpMenu.ActionAdd,QtCore.SIGNAL("triggered(bool)"),self.addNewNode)		
 		self.connect(self.graphTree.BackPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.setNetworkSettings)
+		self.connect(self.graphTree.BackPopUpMenu.ActionNewGroup,QtCore.SIGNAL("triggered(bool)"),self.addNewGroup)
+
 		self.connect(self.graphTree.CompoPopUpMenu.ActionDelete,QtCore.SIGNAL("triggered(bool)"),self.deleteSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionUp,QtCore.SIGNAL("triggered(bool)"),self.upSelectedComponent)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionAddToGroup,QtCore.SIGNAL("triggered(bool)"),self.addComponentToGroup)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionDown,QtCore.SIGNAL("triggered(bool)"),self.downSelectedComponent)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionNewConnection,QtCore.SIGNAL("triggered(bool)"),self.BuildNewConnection)
 		self.connect(self.graphTree.CompoPopUpMenu.ActionControl,QtCore.SIGNAL("triggered(bool)"),self.controlComponent)
-		self.connect(self.graphTree.CompoPopUpMenu.ActionSettings,QtCore.SIGNAL("triggered(bool)"),self.componentSettings)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionRemoveFromGroup,QtCore.SIGNAL("triggered(bool)"),self.componentRemoveFromGroup)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionUpGroup,QtCore.SIGNAL("triggered(bool)"),self.upGroup)
+		self.connect(self.graphTree.CompoPopUpMenu.ActionDownGroup,QtCore.SIGNAL("triggered(bool)"),self.downGroup)
+		
+
 		self.connect(self.UI.toolButton_2,QtCore.SIGNAL("clicked()"),self.searchEnteredAlias)
 		self.connect(self.SaveWarning,QtCore.SIGNAL("save()"),self.saveXmlFile)
 		self.connect(self.UI.toolButton_3,QtCore.SIGNAL("clicked()"),self.refreshTreeFromCode)
@@ -154,6 +165,31 @@ class MainClass(QtGui.QMainWindow):
 	def hoverRefreshFromXml(self):
 		self.UI.statusbar.showMessage("Update the Tree From the Xml Code",3000)
 
+	def upGroup(self):
+		component=self.graphTree.CompoPopUpMenu.currentComponent.parent
+		if component.group!=None:
+			component.group.upGroupComponents(self.Logger)
+		else:
+			self.Logger.logData("No group","R")	
+	def downGroup(self):
+		component=self.graphTree.CompoPopUpMenu.currentComponent.parent
+		if component.group!=None:
+			component.group.downGroupComponents(self.Logger)
+		else:
+			self.Logger.logData("No group","R")	
+	def componentRemoveFromGroup(self):
+		component=self.graphTree.CompoPopUpMenu.currentComponent.parent
+		if component.group!=None:
+			component.group.removeComponent(component)
+			self.NetworkScene.update()
+			self.refreshCodeFromTree()
+		else:
+			self.Logger.logData("No group","R")
+	def addComponentToGroup(self):
+		component=self.graphTree.CompoPopUpMenu.currentComponent.parent
+		self.groupSelector.openSelector(component,self.networkSettings.Groups)
+		self.NetworkScene.update()
+		self.refreshCodeFromTree()
 	def BuildNewConnection(self):
 
 		self.graphTree.connectionBuidingStatus=True
@@ -163,6 +199,8 @@ class MainClass(QtGui.QMainWindow):
 		self.connectionBuilder.show()
 		
 
+	def addNewGroup(self):
+		self.groupBuilder.startBuildGroup(self.networkSettings)
 
 	def deleteSelectedComponent(self):
 		self.deleteComponent(self.graphTree.CompoPopUpMenu.currentComponent.parent)
@@ -190,11 +228,11 @@ class MainClass(QtGui.QMainWindow):
 		self.CodeEditor.setText(string)
 		self.Logger.logData("Code Updated SucceFully from the graph")
 	def refreshTreeFromCode(self):#This will refresh the code (Not to file)and draw the new tree
-		print "Refreshing"
+		#print "Refreshing"
 		try:
 			List,Settings=rcmanagerConfignew.getDataFromString(str(self.CodeEditor.text()),self.Logger)
-		except:
-			self.Logger("Error while updating tree from Code" "R")
+		except Exception,e:
+			self.Logger.logData("Error while updating tree from Code::"+str(e), "R")
 		else:
 			self.removeAllComponents()
 			self.networkSettings=Settings
@@ -293,39 +331,13 @@ class MainClass(QtGui.QMainWindow):
 		print "Controlling the current component"
 	def downSelectedComponent(self):
 		component=self.graphTree.CompoPopUpMenu.currentComponent
-		self.downComponent(component.parent)
-	def downComponent(self,component):#To down a particular component
-		try:
-			proc=QtCore.QProcess()
-			proc.startDetached(component.compdown)
-			self.Logger.logData(component.alias+" ::Killed")
-		except Exception, e:
-			self.Logger.logData("Cannot Kill"+str(e),"R")
-			raise e
-		else:
-			pass
-		finally:
-			pass
-	def upComponent(self,component):#Just Up the component
-		try:
-			if component.CheckItem.haveStarted()==False:
-				component.CheckItem.initializeComponent()
-			if component.CheckItem.haveStarted()==False:
-				self.Logger("Component "+component.alias+" Cannot be Monitored because of bad Proxy setting(Error ignored)","R")	
-			proc=QtCore.QProcess()
-			proc.startDetached(component.compup)
-			self.Logger.logData(component.alias+" ::started")
-		except Exception, e:
-			self.Logger.logData("Cannot write"+str(e),"R")
-			raise e
-		else:
-			pass
-		finally:
-			pass
+		rcmanagerConfignew.downComponent(component.parent,self.Logger)
+	
+	
 
 	def upSelectedComponent(self):#This will up a selected component
 		component=self.graphTree.CompoPopUpMenu.currentComponent
-		self.upComponent(component.parent)
+		rcmanagerConfignew.upComponent(component.parent,self.Logger)
 	def setNetworkSettings(self):#To edit the network tree general settings
 		print "network setting editing"	
 	def searchInsideTree(self):#To search a particular component from tree
@@ -333,13 +345,13 @@ class MainClass(QtGui.QMainWindow):
 	def upAllComponents(self):#To set all components in up position
 		for x in self.componentList.__iter__():
 			try:
-				self.upComponent(x)
+				rcmanagerConfignew.upComponent(x,self.Logger)
 			except Exception, e:
 				pass
 	def downAllComponents(self):#To set all components in down position
 		for x in self.componentList.__iter__():
 			try:
-				self.downComponent(x)
+				rcmanagerConfignew.downComponent(x,self.Logger)
 			except Exception,e :
 				pass
 	def simulatorSettings(self):##To edit the simulatorSettings:Unfinished
@@ -405,7 +417,7 @@ class MainClass(QtGui.QMainWindow):
 		for x in range(len):
 			self.deleteComponent(self.componentList[len-1-x])
 	def openXmlFile(self,terminalArg=False,UserHaveChoice=True):#To open the xml files ::Unfinished
-		Settings=rcmanagerConfignew.getDefaultValues()
+		Settings=rcmanagerConfignew.NetworkValues()
 		List=[]
 		try:
 			if self.HadChanged :# To make sure the data we have been working on have been saved
@@ -454,6 +466,7 @@ class MainClass(QtGui.QMainWindow):
 		self.currentZoom=0
 		self.UI.verticalSlider.valueChanged.connect(self.graphZoom)
 	def graphZoom(self):##To be called when ever we wants to zoomingfactor
+		self.graphTree.setTransformationAnchor(self.graphTree.AnchorUnderMouse)
 		new=self.UI.verticalSlider.value()
 		diff=new-self.currentZoom
 		self.currentZoom=new

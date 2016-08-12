@@ -27,10 +27,11 @@
 
 # Importamos el modulo libxml2
 import libxml2, sys,threading,Ice ,time,os 
-import SaveWarning,networkSettingUI,SettingConnection
+import SaveWarning,networkSettingUI,SettingConnection,groupBuilderUI,AddToGroupUI
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
 from time import localtime, strftime##To log data
+
 
 
 try:
@@ -47,6 +48,60 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtGui.QApplication.translate(context, text, disambig)
 
+
+class ComponentGroup():##On working condition
+	def __init__(self):
+		self.groupName=""
+		self.groupIconFilePath=""
+		self.groupIconPixmap=None
+		self.Components=[]
+	def __repr__(self):
+		string=""
+		string=string+self.groupName
+		string=string+self.groupIconFilePath
+		return stringIsUseful
+	def setName(self,name):
+		self.groupName=name
+	def setIconFilePath(self,string):
+		self.groupIconFilePath=string
+	def readFromIconFile(self):##This will read from the iconFilePath and set the pixMap "Dont Forget to call the Function after name of file is assigned"
+		try:
+			if self.groupIconFilePath=="":
+				raise NameError("groupIconFilePath is Null")
+			self.groupIconPixmap=QtGui.QPixmap(self.groupIconFilePath)
+		except Exception,e:
+			raise e
+	def addComponent(self,component):##Add Component to the group
+		
+		if self.Components.__contains__(component):
+			raise NameError("Already in the group")
+			return
+		if component.group!=None:
+			component.group.removeComponent(component)
+		
+		self.Components.append(component)
+		component.groupName=self.groupName
+		component.setGroup(self)
+		component.graphicsItem.Icon=self.groupIconPixmap
+		component.DirectoryItem.setIcon(self.groupIconPixmap)
+
+	def removeComponent(self,component):#Remove the component from the group
+		print "Removing compoent"
+		self.Components.remove(component)
+		component.group=None
+		component.groupName=""
+		component.graphicsItem.Icon=QtGui.QPixmap(getDefaultIconPath())
+		component.DirectoryItem.setIcon(QtGui.QPixmap(getDefaultIconPath()))
+
+	def upGroupComponents(self,Logger):
+		for x in self.Components:
+			upComponent(x,Logger)
+
+	def downGroupComponents(self,Logger):
+		for x in self.Components:
+			downComponent(x,Logger)
+
+
 class Logger():##This will be used to log data
 	def __init__(self,logArea,file=None):
 		self.logArea=logArea
@@ -60,6 +115,97 @@ class Logger():##This will be used to log data
 		time=strftime("%Y-%m-%d %H:%M:%S", localtime())
 		self.logArea.setTextColor(color)
 		self.logArea.append(time +"  >>  "+ text)
+
+class GroupBuilder(QtGui.QDialog):
+	def  __init__(self,parent,logger):
+		QtGui.QDialog.__init__(self)
+		self.parent=parent
+		self.logger=logger
+		self.UI=groupBuilderUI.Ui_Dialog()
+		self.UI.setupUi(self)
+		self.connect(self.UI.pushButton_3,QtCore.SIGNAL("clicked()"),self.SaveGroup)
+		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.cancel)
+		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.browseIcon)
+		self.group=None
+		self.build=False
+	def startBuildGroup(self,networkSettings):
+		self.build=False
+		self.networkSettings=networkSettings
+		self.group=ComponentGroup()
+		self.show()
+		
+	def SaveGroup(self):
+		self.group.setName(self.UI.lineEdit.text())
+		self.group.setIconFilePath(self.UI.lineEdit_2.text())
+		self.group.readFromIconFile()
+		self.networkSettings.Groups.append(self.group)
+		self.parent.refreshCodeFromTree()
+		self.logger.logData("New Group::"+self.UI.lineEdit.text()+" Build")
+		self.UI.lineEdit.setText("")
+		self.UI.lineEdit_2.setText("")
+		self.build=True
+		self.close()
+	def cancel(self):
+		
+		self.build=False
+		self.close()
+		
+	def browseIcon(self):
+		self.UI.lineEdit_2.setText(QtGui.QFileDialog.getOpenFileName(self,'Set Group Icon',os.getcwd(),"Image Files (*.png *.jpg *.bmp)"))
+
+	def closeEvent(self,event):
+		QtGui.QDialog.closeEvent(self,event)
+		if self.build==False:
+			self.logger.logData("Group Building Canceled by User","R")
+			self.UI.lineEdit.setText("")
+			self.UI.lineEdit_2.setText("")
+		self.build=False
+
+
+
+class GroupSelector(QtGui.QDialog):
+	def __init__(self,parent,logger):
+		self.logger=logger
+		self.parent=parent
+		QtGui.QDialog.__init__(self)
+		self.UI=AddToGroupUI.Ui_Dialog()
+		self.UI.setupUi(self)
+		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.cancel)
+		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.selected)
+		self.groupList=None
+		self.component=None
+		self.groupAdded=False
+	def openSelector(self,component,groupList):
+		self.groupAdded=False
+		self.groupList=groupList
+		self.component=component
+		self.UI.listWidget.clear()
+		for x in self.groupList:
+			item=QtGui.QListWidgetItem(QtGui.QIcon(x.groupIconPixmap),x.groupName)
+			self.UI.listWidget.addItem(item)
+		self.show()
+		self.compoent=component
+		self.groupList=groupList
+	def cancel(self):
+		self.groupAdded=False
+		self.close()	
+
+	def selected(self):
+		string=self.UI.listWidget.currentItem().text()
+		for x in self.groupList:
+			if x.groupName==string:
+				x.addComponent(self.component)
+		self.UI.listWidget.clear()
+		self.groupAdded=True
+		self.logger.logData("Component ::"+self.component.alias+" Added to group "+self.component.groupName )
+		self.parent.refreshCodeFromTree()
+		self.close()
+	def closeEvent(self,event):
+		if self.groupAdded==False:
+			QtGui.QDialog.closeEvent(self,event)
+			self.logger.logData("Adding to group Cancelled by User","R")
+			self.UI.listWidget.clear()
+				
 
 class connectionBuilder(QtGui.QDialog):## This is used to set connection between two different dialogs
 	def __init__(self,parent,logger):
@@ -463,7 +609,11 @@ class ShowItemDetails(QtGui.QWidget):##This contains the GUI and internal proces
 		self.isShowing=False
 		self.hide()
 	def showdetails(self,x,y,item=None):
-		self.label.setText(item.alias)
+		string=""
+		string=string+"Name ::"+item.alias+"\n"
+		string=string+"Group Name:: "+item.groupName+"\n"
+
+		self.label.setText(string)
 		self.setGeometry(x,y,150,150)
 	  	self.isShowing=True
 	  	self.show()
@@ -474,6 +624,8 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 	def __init__(self,view=None,mainWindow=None):
 
 		QtCore.QObject.__init__(self)
+		self.group=None
+		self.groupName=""
 		self.View=view
 		self.mainWindow=mainWindow
 		self.asEnd=[]#This is the list of connection where the node act as the ending point
@@ -488,7 +640,7 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 		self.x = 0##This is not reliable >>Have to fix the bug
 		self.y = 0##This is not reliable >>Have to fix the bug
 		self.Ip=""
-		self.IconFilePath=""
+		self.IconFilePath=getDefaultIconPath()
 		self.status=False
 
 		self.CommonProxy=commonBehaviorComponent(self)
@@ -497,6 +649,9 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 		self.graphicsItem=VisualNode(parent=self)
 		self.DirectoryItem=DirectoryItem(parent=self)
 		#self.Controller=ComponentController(parent=self)
+	def setGroup(self,group):
+		self.group=group
+
 	def __repr__(self):
 		string = ''
 		string = string + '[' + self.alias + ']:\n'
@@ -635,11 +790,23 @@ class ComponentMenu(QtGui.QMenu):
 		self.ActionSettings=QtGui.QAction("Settings",parent)
 		self.ActionControl=QtGui.QAction("Control",parent)
 		self.ActionNewConnection=QtGui.QAction("New Connection",parent)
+		self.ActionAddToGroup=QtGui.QAction("Add to Group",parent)
 		self.ActionDelete=QtGui.QAction("Delete",parent)
+		self.ActionRemoveFromGroup=QtGui.QAction("Remove Group",parent)
+		self.ActionUpGroup=QtGui.QAction("UP All",parent)
+		self.ActionDownGroup=QtGui.QAction("DOWN All",parent)
+		
+		self.GroupMenu=QtGui.QMenu("Group",parent)
+		self.GroupMenu.addAction(self.ActionAddToGroup)
+		self.GroupMenu.addAction(self.ActionRemoveFromGroup)
+		self.GroupMenu.addAction(self.ActionUpGroup)
+		self.GroupMenu.addAction(self.ActionDownGroup)
+
 		self.addAction(self.ActionDelete)
 		self.addAction(self.ActionUp)
 		self.addAction(self.ActionDown)
 		self.addAction(self.ActionNewConnection)
+		self.addMenu(self.GroupMenu)
 		self.addAction(self.ActionControl)
 		self.addAction(self.ActionSettings)
 	def setComponent(self,component):
@@ -655,18 +822,22 @@ class BackgroundMenu(QtGui.QMenu):
 		self.ActionUp=QtGui.QAction("Up All",parent)
 		self.ActionDown=QtGui.QAction("Down All",parent)
 		self.ActionSearch=QtGui.QAction("Search",parent)
-		self.ActionAdd=QtGui.QAction("Add",parent)
+		self.ActionAdd=QtGui.QAction("Add Component",parent)
+		self.ActionNewGroup=QtGui.QAction("New Group",parent)
+
 		self.addAction(self.ActionUp)
 		self.addAction(self.ActionDown)
-		self.addAction(self.ActionSettings)
 		self.addAction(self.ActionAdd)
+		self.addAction(self.ActionNewGroup)
+		self.addAction(self.ActionSettings)
 		self.addAction(self.ActionSearch)
 		self.pos=None
 	def setPos(self,pos):
 		self.pos=pos
-def getDefaultValues():
-	dict = {}
-	return dict#This will return the default values for a network settings
+
+class NetworkValues():##This will contain Values about the network
+	def __init__(self):
+		self.Groups=[]
 
 def getStringFromFile(path):##This is the first function to be called for reading configurations for a xml file
 	try:
@@ -691,7 +862,7 @@ def getDataFromString(data,logger):#Data is a string in xml format containing in
 
 def parsercmanager(node,logger): #Call seperate functions for general settings and nodes
 	components = []
-	generalSettings=getDefaultValues()
+	generalSettings=NetworkValues()
 	if node.type == "element" and node.name == "rcmanager":
 		child = node.children
 		while child is not None:
@@ -699,28 +870,49 @@ def parsercmanager(node,logger): #Call seperate functions for general settings a
 				if child.name == "generalInformation":
 					parseGeneralInformation(child, generalSettings,logger)
 				elif child.name == "node":
-					parseNode(child, components,logger)
+					parseNode(child,components,generalSettings, logger)
 				elif stringIsUseful(str(node.properties)):
 					print 'ERROR when parsing rcmanager: '+str(child.name)+': '+str(child.properties)
 			child = child.next
 	return components, generalSettings
 
-def parseGeneralInformation(node, dict,logger): ##Takes care of reading the general information about the network tree
+def parseGeneralInformation(node, generalSettings,logger): ##Takes care of reading the general information about the network tree
+	
+	#print "Entered the parseGeneralInformation"
 	if node.type == "element" and node.name == "generalInformation":
-		logger.logData("General Information Read")
+		child =node.children
+		while child is not None:
+			if child.type=="element":
+				if child.name=="group":
+			#		print "Started reading a group"
+					try:
+						group=ComponentGroup()
+						group.setName(parseSingleValue(child,"name"))
+						group.setIconFilePath(parseSingleValue(child,"iconfile"))
+						group.readFromIconFile()
+						generalSettings.Groups.append(group)
+					except Exception,e:
+						logger.logData("Couldn Read group "+str(e),"R")
+					else:
+						logger.logData("Read the group ::"+ group.groupName +" Information")
+			child=child.next
 
-def parseGeneralValues(node, dict, arg):##Called to read the attribute values of elements of General Values
-	if node.children != None: print 'WARNING: No children expected'
-	for attr in arg:
-		if node.hasProp(attr):
-			dict[attr] = node.prop(attr)
-			node.unsetProp(attr)
+		logger.logData("General Information Successfully read")
+
 
 def checkForMoreProperties(node):
 	if node.properties != None: print 'WARNING: Attributes unexpected: ' + str(node.properties)
 
+def searchForGroupName(settings,name):
+	flag=0
+	for x in  settings.Groups:
+		if x.groupName==name:
+			flag=1
+			return x
+	if flag==0:
+		raise Exception("Couldn't find a group with name"+name)
 
-def parseNode(node, components,logger):#To get the properties of a component
+def parseNode(node, components,generalSettings,logger):#To get the properties of a component
 	if node.type == "element" and node.name == "node":
 		child = node.children
 		comp = CompInfo()
@@ -730,7 +922,15 @@ def parseNode(node, components,logger):#To get the properties of a component
 		comp.endpoint = parseSingleValue(node, 'endpoint', False)
 		while child is not None:
 			if child.type == "element":
-				if child.name == "workingDir":
+				if child.name=="group":
+					comp.groupName=parseSingleValue(child,"name")
+					try:
+						group=searchForGroupName(generalSettings,comp.groupName)
+						group.addComponent(comp)
+					except Exception,e:
+						logger.logData("Couldnt add Component to the group::"+comp.groupName+" "+str(e),"R")	
+				
+				elif child.name == "workingDir":
 					comp.workingdir = parseSingleValue(child, 'path')
 				elif child.name == "upCommand":
 					comp.compup = parseSingleValue(child, 'command')
@@ -753,8 +953,6 @@ def parseNode(node, components,logger):#To get the properties of a component
 				
 				elif child.name == "dependence":
 					comp.dependences.append(parseSingleValue(child, 'alias'))
-				elif child.name == "icon":
-					parseIcon(child, comp)
 				elif child.name == "ip":
 					comp.Ip=parseSingleValue(child, "value")
 				elif stringIsUseful(str(child.properties)):
@@ -772,6 +970,17 @@ def parseNode(node, components,logger):#To get the properties of a component
 	
 	comp.CheckItem.start()
 
+def stringIsUseful(string):
+	if len(string) == 0: return False
+	if string[0] == '#': return False
+
+	s1 = string
+	s1 = s1.replace(' ', '')
+	s1 = s1.replace('\t', '')
+	s1 = s1.replace('\n', '')
+
+	if len(s1) == 0: return False
+	return True
 
 def parseSingleValue(node, arg, doCheck=True, optional=False):
 	
@@ -784,29 +993,14 @@ def parseSingleValue(node, arg, doCheck=True, optional=False):
 		node.unsetProp(arg)
 		return ret
 
-def parseIcon(node, comp):
-	x = parseSingleValue(node, 'value', optional=True)
-	try:
-		icon=QtGui.QPixmap(x)
-		comp.graphicsItem.setIcon(icon)
-		comp.DirectoryItem.setIcon(icon)
-		comp.IconFilePath=x
-		if icon.isNull():
-			raise NameError("Wrong file Path Given on item")
-	except:
-		print "Icon file path incorrect>>Icon set to default Value"     
-		comp.IconFilePath=os.getcwd()+"/share/rcmanager/1465594390_sign-add.png" #THis is the default icon can be changed by users choice
-		icon=QtGui.QPixmap(comp.IconFilePath)
-		comp.graphicsItem.setIcon(icon)
-		comp.DirectoryItem.setIcon(icon)
-
-def getXmlFromNetwork(dict, components,logger):
+def getXmlFromNetwork(NetworkSettings, components,logger):
 	string=''
 	string=string+'<?xml version="1.0" encoding="UTF-8"?>\n'
 	string=string+'<rcmanager>\n\n'
 	string=string+'\t<generalInformation>\n'
 
-	#To be edited as setting increases
+	for x in NetworkSettings.Groups:
+		string=string+'\t\t<group name="'+x.groupName+'" iconfile="'+x.groupIconFilePath+'" />\n'
 
 	string=string+'\n\t</generalInformation>\n'
 	
@@ -816,6 +1010,8 @@ def getXmlFromNetwork(dict, components,logger):
 		string=string+'\n\t<node alias="' + comp.alias + '" endpoint="' + comp.endpoint + '">\n'
 		for dep in comp.asEnd:
 			string=string+'\t\t<dependence alias="' + dep.fromComponent.alias + '" />\n'
+		if comp.groupName!="":
+			string=string+'\t\t<group name="' + comp.groupName+ '" />\n'	
 		string=string+'\t\t<workingDir path="' + comp.workingdir + '" />\n'
 		string=string+'\t\t<upCommand command="' + comp.compup + '" />\n'
 		string=string+'\t\t<downCommand command="' + comp.compdown + '" />\n'
@@ -854,12 +1050,7 @@ def getDefaultSettings():
 	return string
 
 def checkForCompChildren(comp,Xmlnode):#This will check whether the opened Doc have enough children to draw the things
-	if searchForChild(Xmlnode,"icon")==False:
-		print "No icon specified.Set to default Value"
-		comp.IconFilePath=os.getcwd()+"/share/rcmanager/1465594390_sign-add.png" #THis is the default icon can be changed by users choice
-		icon=QtGui.QPixmap(comp.IconFilePath)
-		comp.graphicsItem.setIcon(icon)
-		comp.DirectoryItem.setIcon(icon)
+	return
 
 def searchForChild(Xmlnode,Name):##Will search in tree for node with name Name
 	child=Xmlnode.children
@@ -872,3 +1063,35 @@ def searchForChild(Xmlnode,Name):##Will search in tree for node with name Name
 
 def getDefaultIconPath():
 	return os.getcwd()+"/share/rcmanager/1465594390_sign-add.png" #THis is the default icon can be changed by users choice
+
+
+def upComponent(component,Logger):#Just Up the component
+		try:
+			if component.CheckItem.haveStarted()==False:
+				component.CheckItem.initializeComponent()
+			if component.CheckItem.haveStarted()==False:
+				Logger.logData("Component "+component.alias+" Cannot be Monitored because of bad Proxy setting(Error ignored)","R")	
+			proc=QtCore.QProcess()
+			proc.startDetached(component.compup)
+			Logger.logData(component.alias+" ::started")
+		except Exception, e:
+			Logger.logData("Cannot write"+str(e),"R")
+			raise e
+		else:
+			pass
+		finally:
+			pass	
+
+
+def downComponent(component,Logger):#To down a particular component
+		try:
+			proc=QtCore.QProcess()
+			proc.startDetached(component.compdown)
+			Logger.logData(component.alias+" ::Killed")
+		except Exception, e:
+			Logger.logData("Cannot Kill"+str(e),"R")
+			raise e
+		else:
+			pass
+		finally:
+			pass
