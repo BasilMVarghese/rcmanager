@@ -27,7 +27,7 @@
 
 # Importamos el modulo libxml2
 import libxml2, sys,threading,Ice ,time,os 
-import SaveWarning,networkSettingUI,SettingConnection
+import SaveWarning,networkSettingUI,SettingConnection,groupBuilderUI,AddToGroupUI
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
 from time import localtime, strftime##To log data
@@ -55,6 +55,11 @@ class ComponentGroup():##On working condition
 		self.groupIconFilePath=""
 		self.groupIconPixmap=None
 		self.Components=[]
+	def __repr__(self):
+		string=""
+		string=string+self.groupName
+		string=string+self.groupIconFilePath
+		return stringIsUseful
 	def setName(self,name):
 		self.groupName=name
 	def setIconFilePath(self,string):
@@ -67,18 +72,26 @@ class ComponentGroup():##On working condition
 		except Exception,e:
 			raise e
 	def addComponent(self,component):##Add Component to the group
+		
 		if self.Components.__contains__(component):
 			raise NameError("Already in the group")
-		else:
-			self.Components.append(component)
-			component.setGroup(self)
-			component.graphicsItem.Icon=self.groupIconPixmap
-			component.DirectoryItem.setIcon(self.groupIconFilePath)
+			return
+		if component.group!=None:
+			component.group.removeComponent(component)
+		
+		self.Components.append(component)
+		component.groupName=self.groupName
+		component.setGroup(self)
+		component.graphicsItem.Icon=self.groupIconPixmap
+		component.DirectoryItem.setIcon(self.groupIconPixmap)
 
 	def removeComponent(self,component):#Remove the component from the group
+		print "Removing compoent"
 		self.Components.remove(component)
 		component.group=None
-		component.graphicsItem.setIcon(QtGui.QPixmap(getDefaultIconPath()))
+		component.groupName=""
+		component.graphicsItem.Icon=QtGui.QPixmap(getDefaultIconPath())
+		component.DirectoryItem.setIcon(QtGui.QPixmap(getDefaultIconPath()))
 
 	def upGroupComponents(self,Logger):
 		for x in self.Components:
@@ -102,6 +115,97 @@ class Logger():##This will be used to log data
 		time=strftime("%Y-%m-%d %H:%M:%S", localtime())
 		self.logArea.setTextColor(color)
 		self.logArea.append(time +"  >>  "+ text)
+
+class GroupBuilder(QtGui.QDialog):
+	def  __init__(self,parent,logger):
+		QtGui.QDialog.__init__(self)
+		self.parent=parent
+		self.logger=logger
+		self.UI=groupBuilderUI.Ui_Dialog()
+		self.UI.setupUi(self)
+		self.connect(self.UI.pushButton_3,QtCore.SIGNAL("clicked()"),self.SaveGroup)
+		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.cancel)
+		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.browseIcon)
+		self.group=None
+		self.build=False
+	def startBuildGroup(self,networkSettings):
+		self.build=False
+		self.networkSettings=networkSettings
+		self.group=ComponentGroup()
+		self.show()
+		
+	def SaveGroup(self):
+		self.group.setName(self.UI.lineEdit.text())
+		self.group.setIconFilePath(self.UI.lineEdit_2.text())
+		self.group.readFromIconFile()
+		self.networkSettings.Groups.append(self.group)
+		self.parent.refreshCodeFromTree()
+		self.logger.logData("New Group::"+self.UI.lineEdit.text()+" Build")
+		self.UI.lineEdit.setText("")
+		self.UI.lineEdit_2.setText("")
+		self.build=True
+		self.close()
+	def cancel(self):
+		
+		self.build=False
+		self.close()
+		
+	def browseIcon(self):
+		self.UI.lineEdit_2.setText(QtGui.QFileDialog.getOpenFileName(self,'Set Group Icon',os.getcwd(),"Image Files (*.png *.jpg *.bmp)"))
+
+	def closeEvent(self,event):
+		QtGui.QDialog.closeEvent(self,event)
+		if self.build==False:
+			self.logger.logData("Group Building Canceled by User","R")
+			self.UI.lineEdit.setText("")
+			self.UI.lineEdit_2.setText("")
+		self.build=False
+
+
+
+class GroupSelector(QtGui.QDialog):
+	def __init__(self,parent,logger):
+		self.logger=logger
+		self.parent=parent
+		QtGui.QDialog.__init__(self)
+		self.UI=AddToGroupUI.Ui_Dialog()
+		self.UI.setupUi(self)
+		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.cancel)
+		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.selected)
+		self.groupList=None
+		self.component=None
+		self.groupAdded=False
+	def openSelector(self,component,groupList):
+		self.groupAdded=False
+		self.groupList=groupList
+		self.component=component
+		self.UI.listWidget.clear()
+		for x in self.groupList:
+			item=QtGui.QListWidgetItem(QtGui.QIcon(x.groupIconPixmap),x.groupName)
+			self.UI.listWidget.addItem(item)
+		self.show()
+		self.compoent=component
+		self.groupList=groupList
+	def cancel(self):
+		self.groupAdded=False
+		self.close()	
+
+	def selected(self):
+		string=self.UI.listWidget.currentItem().text()
+		for x in self.groupList:
+			if x.groupName==string:
+				x.addComponent(self.component)
+		self.UI.listWidget.clear()
+		self.groupAdded=True
+		self.logger.logData("Component ::"+self.component.alias+" Added to group "+self.component.groupName )
+		self.parent.refreshCodeFromTree()
+		self.close()
+	def closeEvent(self,event):
+		if self.groupAdded==False:
+			QtGui.QDialog.closeEvent(self,event)
+			self.logger.logData("Adding to group Cancelled by User","R")
+			self.UI.listWidget.clear()
+				
 
 class connectionBuilder(QtGui.QDialog):## This is used to set connection between two different dialogs
 	def __init__(self,parent,logger):
@@ -505,7 +609,11 @@ class ShowItemDetails(QtGui.QWidget):##This contains the GUI and internal proces
 		self.isShowing=False
 		self.hide()
 	def showdetails(self,x,y,item=None):
-		self.label.setText(item.alias)
+		string=""
+		string=string+"Name ::"+item.alias+"\n"
+		string=string+"Group Name:: "+item.groupName+"\n"
+
+		self.label.setText(string)
 		self.setGeometry(x,y,150,150)
 	  	self.isShowing=True
 	  	self.show()
@@ -682,11 +790,23 @@ class ComponentMenu(QtGui.QMenu):
 		self.ActionSettings=QtGui.QAction("Settings",parent)
 		self.ActionControl=QtGui.QAction("Control",parent)
 		self.ActionNewConnection=QtGui.QAction("New Connection",parent)
+		self.ActionAddToGroup=QtGui.QAction("Add to Group",parent)
 		self.ActionDelete=QtGui.QAction("Delete",parent)
+		self.ActionRemoveFromGroup=QtGui.QAction("Remove Group",parent)
+		self.ActionUpGroup=QtGui.QAction("UP All",parent)
+		self.ActionDownGroup=QtGui.QAction("DOWN All",parent)
+		
+		self.GroupMenu=QtGui.QMenu("Group",parent)
+		self.GroupMenu.addAction(self.ActionAddToGroup)
+		self.GroupMenu.addAction(self.ActionRemoveFromGroup)
+		self.GroupMenu.addAction(self.ActionUpGroup)
+		self.GroupMenu.addAction(self.ActionDownGroup)
+
 		self.addAction(self.ActionDelete)
 		self.addAction(self.ActionUp)
 		self.addAction(self.ActionDown)
 		self.addAction(self.ActionNewConnection)
+		self.addMenu(self.GroupMenu)
 		self.addAction(self.ActionControl)
 		self.addAction(self.ActionSettings)
 	def setComponent(self,component):
@@ -702,7 +822,7 @@ class BackgroundMenu(QtGui.QMenu):
 		self.ActionUp=QtGui.QAction("Up All",parent)
 		self.ActionDown=QtGui.QAction("Down All",parent)
 		self.ActionSearch=QtGui.QAction("Search",parent)
-		self.ActionAdd=QtGui.QAction("Add",parent)
+		self.ActionAdd=QtGui.QAction("Add Component",parent)
 		self.ActionNewGroup=QtGui.QAction("New Group",parent)
 
 		self.addAction(self.ActionUp)
@@ -714,6 +834,7 @@ class BackgroundMenu(QtGui.QMenu):
 		self.pos=None
 	def setPos(self,pos):
 		self.pos=pos
+
 class NetworkValues():##This will contain Values about the network
 	def __init__(self):
 		self.Groups=[]
@@ -804,12 +925,12 @@ def parseNode(node, components,generalSettings,logger):#To get the properties of
 				if child.name=="group":
 					comp.groupName=parseSingleValue(child,"name")
 					try:
-						comp.group=searchForGroupName(generalSettings,comp.groupName)
-						comp.group.addComponent(comp)
+						group=searchForGroupName(generalSettings,comp.groupName)
+						group.addComponent(comp)
 					except Exception,e:
-						logger.logData("Couldnt add Component to the group::"+str(e),"R")	
+						logger.logData("Couldnt add Component to the group::"+comp.groupName+" "+str(e),"R")	
 				
-				if child.name == "workingDir":
+				elif child.name == "workingDir":
 					comp.workingdir = parseSingleValue(child, 'path')
 				elif child.name == "upCommand":
 					comp.compup = parseSingleValue(child, 'command')
@@ -872,13 +993,14 @@ def parseSingleValue(node, arg, doCheck=True, optional=False):
 		node.unsetProp(arg)
 		return ret
 
-def getXmlFromNetwork(dict, components,logger):
+def getXmlFromNetwork(NetworkSettings, components,logger):
 	string=''
 	string=string+'<?xml version="1.0" encoding="UTF-8"?>\n'
 	string=string+'<rcmanager>\n\n'
 	string=string+'\t<generalInformation>\n'
 
-	#To be edited as setting increases
+	for x in NetworkSettings.Groups:
+		string=string+'\t\t<group name="'+x.groupName+'" iconfile="'+x.groupIconFilePath+'" />\n'
 
 	string=string+'\n\t</generalInformation>\n'
 	
@@ -888,6 +1010,8 @@ def getXmlFromNetwork(dict, components,logger):
 		string=string+'\n\t<node alias="' + comp.alias + '" endpoint="' + comp.endpoint + '">\n'
 		for dep in comp.asEnd:
 			string=string+'\t\t<dependence alias="' + dep.fromComponent.alias + '" />\n'
+		if comp.groupName!="":
+			string=string+'\t\t<group name="' + comp.groupName+ '" />\n'	
 		string=string+'\t\t<workingDir path="' + comp.workingdir + '" />\n'
 		string=string+'\t\t<upCommand command="' + comp.compup + '" />\n'
 		string=string+'\t\t<downCommand command="' + comp.compdown + '" />\n'
@@ -949,7 +1073,7 @@ def upComponent(component,Logger):#Just Up the component
 				Logger.logData("Component "+component.alias+" Cannot be Monitored because of bad Proxy setting(Error ignored)","R")	
 			proc=QtCore.QProcess()
 			proc.startDetached(component.compup)
-			self.Logger.logData(component.alias+" ::started")
+			Logger.logData(component.alias+" ::started")
 		except Exception, e:
 			Logger.logData("Cannot write"+str(e),"R")
 			raise e

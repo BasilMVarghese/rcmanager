@@ -3,10 +3,12 @@
 <rcmanager>
 
 	<generalInformation>
+		<group name="group" iconfile="/home/h20/Coding /Robocomp/GSOC_TOOL/rcmanager/rcmanager/share/rcmanager/1465394415_floppy.png" />
 
 	</generalInformation>
 
 	<node alias="SIM" endpoint="differentialrobot:tcp -h localhost -p 10004">
+		<group name="group"/>
 		<workingDir path="/home/h20/robocomp/files/innermodel" />
 		<upCommand command="rcremote 127.0.0.1 SIM /home/h20/robocomp/files/innermodel rcis simpleworld.xml" />
 		<downCommand command="pkill -9 -f rcis" />
