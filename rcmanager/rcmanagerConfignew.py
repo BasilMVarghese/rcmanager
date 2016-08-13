@@ -49,6 +49,25 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 
+class simulator(threading.Thread):##This class will take care of the simulationsss
+	def __init__(self,logger,parent):
+		threading.Thread.__init__(self)
+		self.logger=Logger
+		self.parent=parent
+		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
+		self.upDateTime=100
+	def startSimulator(self):
+		self.mutex.lock()
+		self.DoSimulation=True
+		self.mutex.unlock()
+	def stopSimulator(self):
+		self.mutex.lock()
+		self.DoSimulation=False
+		self.mutex.unlock()
+	def run(self):
+		while self.DoSimulation==True:
+			pass
+
 class ComponentGroup():##On working condition
 	def __init__(self):
 		self.groupName=""
@@ -498,7 +517,7 @@ class NodeConnection(QtGui.QGraphicsItem):
 		self.fromY=0
 		self.toX=0
 		self.toY=0
-		self.color=QtGui.QColor.fromRgb(0,255,0)
+		self.color=QtGui.QColor.fromRgb(94,94,94)
 		self.pen=QtGui.QPen(self.color)
 		self.penWidth=2
 		self.pen.setWidth(self.penWidth)
@@ -524,12 +543,21 @@ class NodeConnection(QtGui.QGraphicsItem):
 		self.fromPoint.setY(self.fromY)
 		self.toPoint.setX(self.toX)
 		self.toPoint.setY(self.toY)
-		self.Line=QtCore.QLineF(self.fromPoint,self.toPoint)
+		self.Line=QtCore.QLineF(self.toPoint,self.fromPoint)
 		painter.drawLine(self.Line)
 		self.drawArrows(painter)
 		#painter.drawRect(self.rect)
 	def drawArrows(self,painter):#To 	draw the arrows in the connections::Unfinished
-		pass
+		V1=self.Line.unitVector()
+		V1.setAngle(V1.angle()+20)
+		V1.setLength(40)
+		p1=V1.p2()
+		V1.setAngle(V1.angle()-40)
+		p2=V1.p2()
+		brush=QtGui.QBrush(QtGui.QColor.fromRgb(0,0,0))
+		painter.setBrush(brush)
+		painter.drawPolygon(self.toPoint,p1,p2)	
+		
 	def hoverEnterEvent(self,Event):#Unfinished
 		print "Mouse Hovering in connection from :" +self.fromComponent+" to :" +self.toPoint
 				
