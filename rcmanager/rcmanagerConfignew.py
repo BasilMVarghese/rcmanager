@@ -74,7 +74,7 @@ class simulator(threading.Thread):##This class will take care of the simulations
 		self.logger.logData("Simulation process Ended")
 		self.DoSimulation=False
 		self.mutex.unlock()
-	def updateTree(self,treeSettings,compList):
+	def updateTree(self,treeSettings,compList):##Will update the stuffs
 		self.mutex.lock()
 		self.treeSettings=treeSettings
 		self.compList=compList
@@ -136,9 +136,9 @@ class simulator(threading.Thread):##This class will take care of the simulations
 						continue
 					iterr.graphicsItem.setX(iterr.graphicsItem.x()+iterr.vel_x)
 					iterr.graphicsItem.setY(iterr.graphicsItem.y()+iterr.vel_y)
-					iterr.graphicsItem.updateforDrag()	
+					iterr.graphicsItem.updateforDrag()##This will just update the positions of connection edges..	
 				
-				self.parent.NetworkScene.update()	
+				self.parent.NetworkScene.update()##Updating the graphics Scene	
 			
 			if self.DoSimulation==True:
 				time.sleep(self.upDateTime)
