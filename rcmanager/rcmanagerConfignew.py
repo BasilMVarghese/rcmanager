@@ -26,7 +26,7 @@
 
 
 # Importamos el modulo libxml2
-import libxml2, sys,threading,Ice ,time,os 
+import libxml2, sys,threading,Ice ,time,os,math
 import SaveWarning,networkSettingUI,SettingConnection,groupBuilderUI,AddToGroupUI
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
@@ -52,21 +52,26 @@ except AttributeError:
 class simulator(threading.Thread):##This class will take care of the simulationsss
 	def __init__(self,logger,parent):
 		threading.Thread.__init__(self)
-		self.logger=Logger
+		self.logger=logger
+		self.daemon=True
 		self.parent=parent
 		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 		self.upDateTime=.1
-		self.exit==False
+		self.exit=False
 		self.spring_length=200
 		self.field_force_multiplier=20000
 		self.roza=.6
 		self.time_elapsed2=.25
-	def startSimulator(self):
+		self.DoSimulation=False
+		self.hookes_constant=.07
+	def startSimulator(self): 	
 		self.mutex.lock()
+		self.logger.logData("Simulation process Begun")
 		self.DoSimulation=True
 		self.mutex.unlock()
 	def stopSimulator(self):
 		self.mutex.lock()
+		self.logger.logData("Simulation process Ended")
 		self.DoSimulation=False
 		self.mutex.unlock()
 	def updateTree(self,treeSettings,compList):
@@ -77,6 +82,7 @@ class simulator(threading.Thread):##This class will take care of the simulations
 	def run(self):
 		while self.exit==False:
 			if self.DoSimulation==True:
+				#print "Inside simulation"
 				for iterr in self.compList:
 					force_x = force_y = 0.
 					for iterr2 in self.compList:
@@ -96,7 +102,7 @@ class simulator(threading.Thread):##This class will take care of the simulations
 							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
 						
 						angle = math.atan2(iy, ix)
-						dist2 = ((abs((iy*iy) + (ix*ix))) ** 0.5) ** 2.
+						dist2 = (iy*iy) + (ix*ix)
 						
 						if dist2 < self.spring_length: 
 							dist2 = self.spring_length
@@ -108,11 +114,12 @@ class simulator(threading.Thread):##This class will take care of the simulations
 
 					for iterr2 in self.compList:
 						if iterr2.alias in iterr.dependences or iterr.alias in iterr2.dependences:
+
 							ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
 							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
 							
 							angle = math.atan2(iy, ix)
-							force = math.sqrt(abs((iy*iy) + (ix*ix)))      # force means distance actually
+							force = ((iy*iy) + (ix*ix))**.5      # force means distance actually
 							#if force <= self.spring_length: continue       # "
 							force -= self.spring_length                    # force means spring strain now
 							force = force * self.hookes_constant           # now force means force :-)
@@ -124,12 +131,18 @@ class simulator(threading.Thread):##This class will take care of the simulations
 					
 
 				for iterr in self.compList:
+					if abs(iterr.vel_x)<1 and abs(iterr.vel_y)<1:
+						continue
 					iterr.graphicsItem.setX(iterr.graphicsItem.x()+iterr.vel_x)
-					iterr.graphicsItem.setY(iterr.graphicsItem.y()+iterr.vel_y)	
+					iterr.graphicsItem.setY(iterr.graphicsItem.y()+iterr.vel_y)
+					#iterr.graphicsItem.updateforDrag()	
 				
 				self.parent.NetworkScene.update()	
 			
-			time.sleep(self.upDateTime)
+			if self.DoSimulation==True:
+				time.sleep(self.upDateTime)
+			elif self.DoSimulation==False:
+				time.sleep(1)	
 				
 class ComponentGroup():##On working condition
 	def __init__(self):
@@ -1046,13 +1059,13 @@ def parseNode(node, components,generalSettings,logger):#To get the properties of
 				elif child.name == "xpos":
 					x=parseSingleValue(child, 'value')
 					try :
-						comp.x=float(x)*4
+						comp.x=float(x)
 					except :
 						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
 				elif child.name == "ypos":
-					y = float(parseSingleValue(child, 'value'))*4					
+					y = float(parseSingleValue(child, 'value'))					
 					try :
-						comp.y=float(y)*4
+						comp.y=float(y)
 					except :
 						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
 				

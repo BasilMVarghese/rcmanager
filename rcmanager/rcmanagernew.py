@@ -85,6 +85,8 @@ class MainClass(QtGui.QMainWindow):
 		self.groupBuilder=rcmanagerConfignew.GroupBuilder(self,self.Logger)##It will help to create a new group
 		#setting the code Editor
 		
+		self.Simulator=rcmanagerConfignew.simulator(self.Logger,self)##This is the class which takes care of simulation and other stuffssss
+
 		self.groupSelector=rcmanagerConfignew.GroupSelector(self,self.Logger)
 
 		self.CodeEditor=rcmanagerConfignew.CodeEditor(self.UI.tab_2)
@@ -102,6 +104,7 @@ class MainClass(QtGui.QMainWindow):
 		#print "Count is "+ str(self.UI.verticalLayout.count())
 		#self.UI.toolButton_6.setMouseTracking(True)
 		
+	
 	def setupActions(self):##To setUp connection like saving,opening,etc
 		self.connect(self.UI.toolButton,QtCore.SIGNAL("hovered()"),self.hoverAddComponent)
 		self.connect(self.UI.toolButton_9,QtCore.SIGNAL("hovered()"),self.hoverXmlSettings)
@@ -361,9 +364,12 @@ class MainClass(QtGui.QMainWindow):
 	def editorSettings(self):##To edit the editors settins:Unfinshed
 		print "Editor Settings"	
 	def simulatorOff(self):	#To switch Off the simulator::Unfiunished
-		print "Simulator is Off"
+		self.Simulator.stopSimulator()
 	def simulatorOn(self):#To switch ON simulator::Unfinished
-		print "Simulator is On"
+		if self.Simulator.isAlive()==False:
+			self.Simulator.start()
+		self.Simulator.updateTree(self.networkSettings,self.componentList)
+		self.Simulator.startSimulator()
 	def rcmanagerSetting(self):#To edit the setting of the entire rcmanager settings tool
 		pass
 	def exitRcmanager(self):##To exit the tool after doing all required process
