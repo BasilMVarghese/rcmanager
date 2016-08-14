@@ -127,7 +127,7 @@ class simulator(threading.Thread):##This class will take care of the simulations
 					iterr.graphicsItem.setX(iterr.graphicsItem.x()+iterr.vel_x)
 					iterr.graphicsItem.setY(iterr.graphicsItem.y()+iterr.vel_y)	
 				
-				self.parent.NetworkScene.update()	
+				self.parent.NetworkScene.update()##Update the graphics Scene	
 			
 			time.sleep(self.upDateTime)
 				
