@@ -61,7 +61,7 @@ class simulator(threading.Thread):##This class will take care of the simulations
 		self.spring_length=200
 		self.field_force_multiplier=20000
 		self.roza=.6
-		self.time_elapsed2=.25
+		self.time_elapsed2=.1
 		self.DoSimulation=False
 		self.hookes_constant=.07
 	def startSimulator(self): 	
@@ -101,16 +101,16 @@ class simulator(threading.Thread):##This class will take care of the simulations
 							ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
 							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
 						
-						angle = math.atan2(iy, ix)
+						#angle = math.atan2(iy, ix)
 						dist2 = (iy*iy) + (ix*ix)
-						
+			
 						if dist2 < self.spring_length: 
 							dist2 = self.spring_length
 						
 						force = self.field_force_multiplier / dist2
 						
-						force_x += force * math.cos(angle)
-						force_y += force * math.sin(angle)
+						force_x += force * (ix/(dist2**.5))
+						force_y += force * (iy/(dist2**.5))
 
 					for iterr2 in self.compList:
 						if iterr2.alias in iterr.dependences or iterr.alias in iterr2.dependences:
@@ -118,13 +118,14 @@ class simulator(threading.Thread):##This class will take care of the simulations
 							ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
 							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
 							
-							angle = math.atan2(iy, ix)
+							#angle = math.atan2(iy, ix)
 							force = ((iy*iy) + (ix*ix))**.5      # force means distance actually
+							length=force
 							#if force <= self.spring_length: continue       # "
 							force -= self.spring_length                    # force means spring strain now
 							force = force * self.hookes_constant           # now force means force :-)
-							force_x -= force*math.cos(angle)
-							force_y -= force*math.sin(angle)
+							force_x -= force*ix/length
+							force_y -= force*iy/length
 
 					iterr.vel_x = (iterr.vel_x + (force_x*self.time_elapsed2))*self.roza
 					iterr.vel_y = (iterr.vel_y + (force_y*self.time_elapsed2))*self.roza
@@ -135,7 +136,7 @@ class simulator(threading.Thread):##This class will take care of the simulations
 						continue
 					iterr.graphicsItem.setX(iterr.graphicsItem.x()+iterr.vel_x)
 					iterr.graphicsItem.setY(iterr.graphicsItem.y()+iterr.vel_y)
-					#iterr.graphicsItem.updateforDrag()	
+					iterr.graphicsItem.updateforDrag()	
 				
 				self.parent.NetworkScene.update()	
 			
