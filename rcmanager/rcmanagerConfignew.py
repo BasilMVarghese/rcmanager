@@ -55,8 +55,12 @@ class simulator(threading.Thread):##This class will take care of the simulations
 		self.logger=Logger
 		self.parent=parent
 		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
-		self.upDateTime=100
+		self.upDateTime=.1
 		self.exit==False
+		self.spring_length=200
+		self.field_force_multiplier=20000
+		self.roza=.6
+		self.time_elapsed2=.25
 	def startSimulator(self):
 		self.mutex.lock()
 		self.DoSimulation=True
@@ -73,32 +77,40 @@ class simulator(threading.Thread):##This class will take care of the simulations
 	def run(self):
 		while self.exit==False:
 			if self.DoSimulation==True:
-				for x in self.compList:
-					force_x = force_y = 0
-					for y in self.compList:
-						if x.alias == y.alias:
+				for iterr in self.compList:
+					force_x = force_y = 0.
+					for iterr2 in self.compList:
+						if iterr.alias == iterr2.alias:
 							continue
-						ix = x.DirectoryItem.pos() - y.x
-						iy = x.y - y.y
+						
+						ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
+						iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
+						
 						while ix == 0 and iy == 0:
-							x.x = x.x + random.uniform(  -10, 10)
-							y.x = y.x + random.uniform(-10, 10)
-							x.y = x.y + random.uniform(  -10, 10)
-							y.y = y.y + random.uniform(-10, 10)
-							ix = x.x - y.x
-							iy = x.y - y.y
-
+							
+							iterr.graphicsItem.setX(iterr.graphicsItem.x() + random.uniform(  -10, 10))
+							iterr2.graphicsItem.setX(iterr2.graphicsItem.x() + random.uniform(-10, 10))
+							iterr.graphicsItem.setY(iterr.graphicsItem.y() + random.uniform(  -10, 10))
+							iterr2.graphicsItem.setY(iterr2.graphicsItem.y() + random.uniform(-10, 10))
+							ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
+							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
+						
 						angle = math.atan2(iy, ix)
 						dist2 = ((abs((iy*iy) + (ix*ix))) ** 0.5) ** 2.
-						if dist2 < self.spring_length: dist2 = self.spring_length
+						
+						if dist2 < self.spring_length: 
+							dist2 = self.spring_length
+						
 						force = self.field_force_multiplier / dist2
+						
 						force_x += force * math.cos(angle)
 						force_y += force * math.sin(angle)
 
-					for y in self.compList:
-						if y.name in x.deps or x.name in y.deps:
-							ix = x.x - y.x
-							iy = x.y - y.y
+					for iterr2 in self.compList:
+						if iterr2.alias in iterr.dependences or iterr.alias in iterr2.dependences:
+							ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
+							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
+							
 							angle = math.atan2(iy, ix)
 							force = math.sqrt(abs((iy*iy) + (ix*ix)))      # force means distance actually
 							#if force <= self.spring_length: continue       # "
@@ -107,9 +119,16 @@ class simulator(threading.Thread):##This class will take care of the simulations
 							force_x -= force*math.cos(angle)
 							force_y -= force*math.sin(angle)
 
-					x.vel_x = (x.vel_x + (force_x*self.time_elapsed2))*self.roza
-					x.vel_y = (x.vel_y + (force_y*self.time_elapsed2))*self.roza
+					iterr.vel_x = (iterr.vel_x + (force_x*self.time_elapsed2))*self.roza
+					iterr.vel_y = (iterr.vel_y + (force_y*self.time_elapsed2))*self.roza
+					
+
+				for iterr in self.compList:
+					iterr.graphicsItem.setX(iterr.graphicsItem.x()+iterr.vel_x)
+					iterr.graphicsItem.setY(iterr.graphicsItem.y()+iterr.vel_y)	
 				
+				self.parent.NetworkScene.update()	
+			
 			time.sleep(self.upDateTime)
 				
 class ComponentGroup():##On working condition
@@ -298,6 +317,7 @@ class connectionBuilder(QtGui.QDialog):## This is used to set connection between
 		self.connection.toComponent=component
 		self.toComponent=component
 	def SaveConnection(self):
+		self.toComponent.dependence.append(self.fromComponent.alias)
 		self.toComponent.asEnd.append(self.connection)
 		self.fromComponent.asBeg.append(self.connection)
 		self.parent.NetworkScene.addItem(self.connection)
@@ -706,6 +726,8 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 	def __init__(self,view=None,mainWindow=None):
 
 		QtCore.QObject.__init__(self)
+		self.vel_x=0
+		self.vel_y=0
 		self.group=None
 		self.groupName=""
 		self.View=view

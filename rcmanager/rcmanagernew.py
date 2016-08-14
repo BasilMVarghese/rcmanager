@@ -383,10 +383,11 @@ class MainClass(QtGui.QMainWindow):
 			for y in x.dependences.__iter__():
 				try :
 					comp=self.searchforComponent(y)
-					self.setAconnection(x,comp)
-					self.Logger.logData("Connection from "+x.alias+" to "+comp.alias+" Set")
+					self.setAconnection(comp,x)
+					self.Logger.logData("Connection from "+comp.alias+" to "+x.alias+" Set")
 				except Exception,e:
 					print "Error while setting connection ::"+str(e)
+
 	def searchforComponent(self,alias):#this will search inside the components tree
 		flag=False
 		for x in self.componentList.__iter__():
@@ -497,6 +498,7 @@ class MainClass(QtGui.QMainWindow):
 		#	print component.alias
 		
 		for x in component.asBeg:
+			x.toComponent.dependences.remove(component.alias)
 			x.toComponent.asEnd.remove(x)
 			self.NetworkScene.removeItem(x)
 		for x in component.asEnd:
