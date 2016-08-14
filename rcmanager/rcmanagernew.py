@@ -482,6 +482,7 @@ class MainClass(QtGui.QMainWindow):
 	def addNewComponent(self,pos=QtCore.QPointF()):#The final function which takes care of adding new component default zero
 	
 		component=rcmanagerConfignew.CompInfo(view=self.graphTree,mainWindow=self)
+		component.CheckItem.setLogger(self.Logger)
 		self.componentList.append(component)
 		component.x=pos.x()
 		component.y=pos.y()

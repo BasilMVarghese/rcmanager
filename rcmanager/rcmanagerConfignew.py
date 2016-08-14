@@ -562,7 +562,9 @@ class NodeConnection(QtGui.QGraphicsItem):
 		print "Mouse Hovering in connection from :" +self.fromComponent+" to :" +self.toPoint
 				
 class ComponentChecker(threading.Thread):#This will check the status of components
-	def __init__(self,component):
+	def __init__(self,component,logger=None):	
+		self.logger=logger
+
 		threading.Thread.__init__(self)
 		self.component=component
 		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
@@ -572,6 +574,8 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 		self.alive = False
 		self.aPrx = None
 		self.started=False
+	def setLogger(self,logger):
+		self.logger=logger
 	def haveStarted(self):
 		return self.started
 	def initializeComponent(self):#Called to set the component and to initialize the Ice proxy
@@ -623,6 +627,12 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 	def runrun(self):
 		if not self.isAlive(): self.start()#Note this is different isalive
 	def changed(self):
+		if self.alive==False:
+			if self.logger!=None:
+				self.logger.logData("Component :: "+self.component.alias+" Is now Up")
+		if self.alive==True:
+			if self.logger!=None:
+				self.logger.logData("Component:: "+self.component.alias+ " Is Down","R")
 		self.component.status=not self.alive
 		self.component.graphicsItem.update()
 
@@ -944,6 +954,7 @@ def parseNode(node, components,generalSettings,logger):#To get the properties of
 	if node.type == "element" and node.name == "node":
 		child = node.children
 		comp = CompInfo()
+		comp.CheckItem.setLogger(logger)
 		comp.alias = parseSingleValue(node, 'alias', False)
 		#print "Started reading component:: "+comp.alias
 		comp.DirectoryItem.setText(comp.alias)
@@ -1101,7 +1112,7 @@ def upComponent(component,Logger):#Just Up the component
 				Logger.logData("Component "+component.alias+" Cannot be Monitored because of bad Proxy setting(Error ignored)","R")	
 			proc=QtCore.QProcess()
 			proc.startDetached(component.compup)
-			Logger.logData(component.alias+" ::started")
+			
 		except Exception, e:
 			Logger.logData("Cannot write"+str(e),"R")
 			raise e
@@ -1115,7 +1126,6 @@ def downComponent(component,Logger):#To down a particular component
 		try:
 			proc=QtCore.QProcess()
 			proc.startDetached(component.compdown)
-			Logger.logData(component.alias+" ::Killed")
 		except Exception, e:
 			Logger.logData("Cannot Kill"+str(e),"R")
 			raise e
