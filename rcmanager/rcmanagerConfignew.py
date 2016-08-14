@@ -56,6 +56,7 @@ class simulator(threading.Thread):##This class will take care of the simulations
 		self.parent=parent
 		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
 		self.upDateTime=100
+		self.exit==False
 	def startSimulator(self):
 		self.mutex.lock()
 		self.DoSimulation=True
@@ -64,10 +65,53 @@ class simulator(threading.Thread):##This class will take care of the simulations
 		self.mutex.lock()
 		self.DoSimulation=False
 		self.mutex.unlock()
+	def updateTree(self,treeSettings,compList):
+		self.mutex.lock()
+		self.treeSettings=treeSettings
+		self.compList=compList
+		self.mutex.unlock()
 	def run(self):
-		while self.DoSimulation==True:
-			pass
+		while self.exit==False:
+			if self.DoSimulation==True:
+				for x in self.compList:
+					force_x = force_y = 0
+					for y in self.compList:
+						if x.alias == y.alias:
+							continue
+						ix = x.DirectoryItem.pos() - y.x
+						iy = x.y - y.y
+						while ix == 0 and iy == 0:
+							x.x = x.x + random.uniform(  -10, 10)
+							y.x = y.x + random.uniform(-10, 10)
+							x.y = x.y + random.uniform(  -10, 10)
+							y.y = y.y + random.uniform(-10, 10)
+							ix = x.x - y.x
+							iy = x.y - y.y
 
+						angle = math.atan2(iy, ix)
+						dist2 = ((abs((iy*iy) + (ix*ix))) ** 0.5) ** 2.
+						if dist2 < self.spring_length: dist2 = self.spring_length
+						force = self.field_force_multiplier / dist2
+						force_x += force * math.cos(angle)
+						force_y += force * math.sin(angle)
+
+					for y in self.compList:
+						if y.name in x.deps or x.name in y.deps:
+							ix = x.x - y.x
+							iy = x.y - y.y
+							angle = math.atan2(iy, ix)
+							force = math.sqrt(abs((iy*iy) + (ix*ix)))      # force means distance actually
+							#if force <= self.spring_length: continue       # "
+							force -= self.spring_length                    # force means spring strain now
+							force = force * self.hookes_constant           # now force means force :-)
+							force_x -= force*math.cos(angle)
+							force_y -= force*math.sin(angle)
+
+					x.vel_x = (x.vel_x + (force_x*self.time_elapsed2))*self.roza
+					x.vel_y = (x.vel_y + (force_y*self.time_elapsed2))*self.roza
+				
+			time.sleep(self.upDateTime)
+				
 class ComponentGroup():##On working condition
 	def __init__(self):
 		self.groupName=""
