@@ -50,6 +50,7 @@ class MainClass(QtGui.QMainWindow):
 	def __init__(self, arg=None):
 		QtGui.QDialog.__init__(self,arg)
 		self.currentComponent=None
+		self.setWindowIcon(QtGui.QIcon(QtGui.QPixmap(os.getcwd()+"/share/rcmanager/drawing_green.png")))
 		self.showMaximized()
 		self.componentList=[]
 		self.networkSettings=rcmanagerConfignew.NetworkValues()
