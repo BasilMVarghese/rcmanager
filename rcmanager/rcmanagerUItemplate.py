@@ -1,14 +1,5 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'rcmanagerUItemplate.ui'
-#
-# Created: Sat Jul 30 16:22:23 2016
-#      by: PyQt4 UI code generator 4.10.4
-#
-# WARNING! All changes made in this file will be lost!
-
 from PyQt4 import QtCore, QtGui
-import toolButton
+from rcmanagerConfignew import toolButton
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -112,7 +103,7 @@ class Ui_MainWindow(object):
         self.gridLayout_7.setObjectName(_fromUtf8("gridLayout_7"))
         spacerItem6 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
         self.gridLayout_7.addItem(spacerItem6, 5, 0, 1, 1)
-        self.toolButton_7 = toolButton.toolButton(self.tab_3)
+        self.toolButton_7 = toolButton(self.tab_3)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/simulionOn.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.toolButton_7.setIcon(icon)
@@ -122,19 +113,19 @@ class Ui_MainWindow(object):
         self.verticalSlider.setOrientation(QtCore.Qt.Vertical)
         self.verticalSlider.setObjectName(_fromUtf8("verticalSlider"))
         self.gridLayout_7.addWidget(self.verticalSlider, 0, 0, 1, 1)
-        self.toolButton_8 = toolButton.toolButton(self.tab_3)
+        self.toolButton_8 = toolButton(self.tab_3)
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/simulatorOFF.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.toolButton_8.setIcon(icon1)
         self.toolButton_8.setObjectName(_fromUtf8("toolButton_8"))
         self.gridLayout_7.addWidget(self.toolButton_8, 3, 0, 1, 1)
-        self.toolButton_10 = toolButton.toolButton(self.tab_3)
+        self.toolButton_10 = toolButton(self.tab_3)
         icon2 = QtGui.QIcon()
         icon2.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465394550_Settings.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.toolButton_10.setIcon(icon2)
         self.toolButton_10.setObjectName(_fromUtf8("toolButton_10"))
         self.gridLayout_7.addWidget(self.toolButton_10, 4, 0, 1, 1)
-        self.toolButton_6 = toolButton.toolButton(self.tab_3)
+        self.toolButton_6 = toolButton(self.tab_3)
         icon3 = QtGui.QIcon()
         icon3.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/refresh.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.toolButton_6.setIcon(icon3)
@@ -160,23 +151,23 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2 = QtGui.QHBoxLayout(self.widget_2)
         self.horizontalLayout_2.setMargin(0)
         self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
-        self.toolButton_3 = toolButton.toolButton(self.widget_2)
+        self.toolButton_3 = toolButton(self.widget_2)
         self.toolButton_3.setIcon(icon3)
         self.toolButton_3.setObjectName(_fromUtf8("toolButton_3"))
         self.horizontalLayout_2.addWidget(self.toolButton_3)
-        self.toolButton_4 = toolButton.toolButton(self.widget_2)
+        self.toolButton_4 = toolButton(self.widget_2)
         icon4 = QtGui.QIcon()
         icon4.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/networkSettings.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.toolButton_4.setIcon(icon4)
         self.toolButton_4.setObjectName(_fromUtf8("toolButton_4"))
         self.horizontalLayout_2.addWidget(self.toolButton_4)
-        self.toolButton_5 = toolButton.toolButton(self.widget_2)
+        self.toolButton_5 = toolButton(self.widget_2)
         icon5 = QtGui.QIcon()
         icon5.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465594390_sign-add.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.toolButton_5.setIcon(icon5)
         self.toolButton_5.setObjectName(_fromUtf8("toolButton_5"))
         self.horizontalLayout_2.addWidget(self.toolButton_5)
-        self.toolButton_9 = toolButton.toolButton(self.widget_2)
+        self.toolButton_9 = toolButton(self.widget_2)
         self.toolButton_9.setIcon(icon2)
         self.toolButton_9.setObjectName(_fromUtf8("toolButton_9"))
         self.horizontalLayout_2.addWidget(self.toolButton_9)
@@ -251,13 +242,13 @@ class Ui_MainWindow(object):
         self.lineEdit.setText(_fromUtf8(""))
         self.lineEdit.setObjectName(_fromUtf8("lineEdit"))
         self.horizontalLayout.addWidget(self.lineEdit)
-        self.toolButton_2 = toolButton.toolButton(self.widget)
+        self.toolButton_2 = toolButton(self.widget)
         icon6 = QtGui.QIcon()
         icon6.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465608687_search.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.toolButton_2.setIcon(icon6)
         self.toolButton_2.setObjectName(_fromUtf8("toolButton_2"))
         self.horizontalLayout.addWidget(self.toolButton_2)
-        self.toolButton = toolButton.toolButton(self.widget)
+        self.toolButton = toolButton(self.widget)
         self.toolButton.setIcon(icon5)
         self.toolButton.setObjectName(_fromUtf8("toolButton"))
         self.horizontalLayout.addWidget(self.toolButton)

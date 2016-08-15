@@ -27,7 +27,6 @@
 
 # Importamos el modulo libxml2
 import libxml2, sys,threading,Ice ,time,os 
-import SaveWarning,networkSettingUI,SettingConnection,groupBuilderUI,AddToGroupUI
 from PyQt4 import QtCore, QtGui, Qt,Qsci
 filePath = 'rcmanager.xml'
 from time import localtime, strftime##To log data
@@ -313,6 +312,20 @@ class GroupSelector(QtGui.QDialog):
 			self.logger.logData("Adding to group Cancelled by User","R")
 			self.UI.listWidget.clear()
 				
+
+
+##
+#This is inherited tool Button ..Main reason was to show its purpose while hovering the button
+##
+
+class toolButton(QtGui.QToolButton):
+	def  __init__(self,parent):
+		QtGui.QToolButton.__init__(self,parent)
+		self.setMouseTracking(True)
+	def enterEvent(self,event):
+		self.emit(QtCore.SIGNAL("hovered()"))
+		QtGui.QToolButton.enterEvent(self,event)
+
 
 
 ##
