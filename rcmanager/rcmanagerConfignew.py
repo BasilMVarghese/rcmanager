@@ -49,88 +49,7 @@ except AttributeError:
         return QtGui.QApplication.translate(context, text, disambig)
 
 
-class simulator(threading.Thread):##This class will take care of the simulationsss
-	def __init__(self,logger,parent):
-		threading.Thread.__init__(self)
-		self.logger=Logger
-		self.parent=parent
-		self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
-		self.upDateTime=.1
-		self.exit==False
-		self.spring_length=200
-		self.field_force_multiplier=20000
-		self.roza=.6
-		self.time_elapsed2=.25
-	def startSimulator(self):
-		self.mutex.lock()
-		self.DoSimulation=True
-		self.mutex.unlock()
-	def stopSimulator(self):
-		self.mutex.lock()
-		self.DoSimulation=False
-		self.mutex.unlock()
-	def updateTree(self,treeSettings,compList):
-		self.mutex.lock()
-		self.treeSettings=treeSettings
-		self.compList=compList
-		self.mutex.unlock()
-	def run(self):
-		while self.exit==False:
-			if self.DoSimulation==True:
-				for iterr in self.compList:
-					force_x = force_y = 0.
-					for iterr2 in self.compList:
-						if iterr.alias == iterr2.alias:
-							continue
-						
-						ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
-						iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
-						
-						while ix == 0 and iy == 0:
-							
-							iterr.graphicsItem.setX(iterr.graphicsItem.x() + random.uniform(  -10, 10))
-							iterr2.graphicsItem.setX(iterr2.graphicsItem.x() + random.uniform(-10, 10))
-							iterr.graphicsItem.setY(iterr.graphicsItem.y() + random.uniform(  -10, 10))
-							iterr2.graphicsItem.setY(iterr2.graphicsItem.y() + random.uniform(-10, 10))
-							ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
-							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
-						
-						angle = math.atan2(iy, ix)
-						dist2 = ((abs((iy*iy) + (ix*ix))) ** 0.5) ** 2.
-						
-						if dist2 < self.spring_length: 
-							dist2 = self.spring_length
-						
-						force = self.field_force_multiplier / dist2
-						
-						force_x += force * math.cos(angle)
-						force_y += force * math.sin(angle)
-
-					for iterr2 in self.compList:
-						if iterr2.alias in iterr.dependences or iterr.alias in iterr2.dependences:
-							ix = iterr.graphicsItem.x() - iterr2.graphicsItem.x()
-							iy = iterr.graphicsItem.y() - iterr2.graphicsItem.y()
-							
-							angle = math.atan2(iy, ix)
-							force = math.sqrt(abs((iy*iy) + (ix*ix)))      # force means distance actually
-							#if force <= self.spring_length: continue       # "
-							force -= self.spring_length                    # force means spring strain now
-							force = force * self.hookes_constant           # now force means force :-)
-							force_x -= force*math.cos(angle)
-							force_y -= force*math.sin(angle)
-
-					iterr.vel_x = (iterr.vel_x + (force_x*self.time_elapsed2))*self.roza
-					iterr.vel_y = (iterr.vel_y + (force_y*self.time_elapsed2))*self.roza
-					
-
-				for iterr in self.compList:
-					iterr.graphicsItem.setX(iterr.graphicsItem.x()+iterr.vel_x)
-					iterr.graphicsItem.setY(iterr.graphicsItem.y()+iterr.vel_y)	
-				
-				self.parent.NetworkScene.update()##Update the graphics Scene	
 			
-			time.sleep(self.upDateTime)
-				
 class ComponentGroup():##On working condition
 	def __init__(self):
 		self.groupName=""
@@ -198,12 +117,78 @@ class Logger():##This will be used to log data
 		self.logArea.setTextColor(color)
 		self.logArea.append(time +"  >>  "+ text)
 
+
+
+##
+#This Class will take care of the Building process of a new group..THe first class is its GUI. second class is its backbone
+##
+
+class GroupBuilder_Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.resize(543, 135)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(Dialog.sizePolicy().hasHeightForWidth())
+        Dialog.setSizePolicy(sizePolicy)
+        self.gridLayout = QtGui.QGridLayout(Dialog)
+        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+        self.verticalLayout = QtGui.QVBoxLayout()
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.horizontalLayout = QtGui.QHBoxLayout()
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.label = QtGui.QLabel(Dialog)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.horizontalLayout.addWidget(self.label)
+        self.lineEdit = QtGui.QLineEdit(Dialog)
+        self.lineEdit.setObjectName(_fromUtf8("lineEdit"))
+        self.horizontalLayout.addWidget(self.lineEdit)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.horizontalLayout_3 = QtGui.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
+        self.label_2 = QtGui.QLabel(Dialog)
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.horizontalLayout_3.addWidget(self.label_2)
+        self.lineEdit_2 = QtGui.QLineEdit(Dialog)
+        self.lineEdit_2.setObjectName(_fromUtf8("lineEdit_2"))
+        self.horizontalLayout_3.addWidget(self.lineEdit_2)
+        self.pushButton = QtGui.QPushButton(Dialog)
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.horizontalLayout_3.addWidget(self.pushButton)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
+        self.horizontalLayout_4 = QtGui.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(_fromUtf8("horizontalLayout_4"))
+        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem)
+        self.pushButton_2 = QtGui.QPushButton(Dialog)
+        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        self.horizontalLayout_4.addWidget(self.pushButton_2)
+        self.pushButton_3 = QtGui.QPushButton(Dialog)
+        self.pushButton_3.setAutoDefault(False)
+        self.pushButton_3.setDefault(True)
+        self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
+        self.horizontalLayout_4.addWidget(self.pushButton_3)
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
+        self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog", None))
+        self.label.setText(_translate("Dialog", "Group Name", None))
+        self.label_2.setText(_translate("Dialog", "Icon File         ", None))
+        self.pushButton.setText(_translate("Dialog", "Browse", None))
+        self.pushButton_2.setText(_translate("Dialog", "Cancel", None))
+        self.pushButton_3.setText(_translate("Dialog", "Ok", None))
+
 class GroupBuilder(QtGui.QDialog):
 	def  __init__(self,parent,logger):
 		QtGui.QDialog.__init__(self)
 		self.parent=parent
 		self.logger=logger
-		self.UI=groupBuilderUI.Ui_Dialog()
+		self.UI=GroupBuilder_Ui_Dialog()
 		self.UI.setupUi(self)
 		self.connect(self.UI.pushButton_3,QtCore.SIGNAL("clicked()"),self.SaveGroup)
 		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.cancel)
@@ -245,12 +230,52 @@ class GroupBuilder(QtGui.QDialog):
 
 
 
+
+##
+#This Will take care of adding a component into a particular group..The first class is its GUI and the second one is its main thing
+##
+
+
+class AddToGroup_Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.resize(282, 394)
+        self.gridLayout = QtGui.QGridLayout(Dialog)
+        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+        self.verticalLayout = QtGui.QVBoxLayout()
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.horizontalLayout = QtGui.QHBoxLayout()
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.listWidget = QtGui.QListWidget(Dialog)
+        self.listWidget.setObjectName(_fromUtf8("listWidget"))
+        self.horizontalLayout.addWidget(self.listWidget)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.horizontalLayout_2 = QtGui.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
+        self.pushButton_2 = QtGui.QPushButton(Dialog)
+        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        self.horizontalLayout_2.addWidget(self.pushButton_2)
+        self.pushButton = QtGui.QPushButton(Dialog)
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.horizontalLayout_2.addWidget(self.pushButton)
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog", None))
+        self.pushButton_2.setText(_translate("Dialog", "Cancel", None))
+        self.pushButton.setText(_translate("Dialog", "Ok", None))
+
+
 class GroupSelector(QtGui.QDialog):
 	def __init__(self,parent,logger):
 		self.logger=logger
 		self.parent=parent
 		QtGui.QDialog.__init__(self)
-		self.UI=AddToGroupUI.Ui_Dialog()
+		self.UI=AddToGroup_Ui_Dialog()
 		self.UI.setupUi(self)
 		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.cancel)
 		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.selected)
@@ -289,6 +314,62 @@ class GroupSelector(QtGui.QDialog):
 			self.UI.listWidget.clear()
 				
 
+
+##
+#This will take care of the Building the connection between nodes..The first class is its GUI.the second one is the main thing.
+##
+
+
+class ConnectionBuilder_Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.resize(434, 138)
+        self.gridLayout = QtGui.QGridLayout(Dialog)
+        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+        self.verticalLayout = QtGui.QVBoxLayout()
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.horizontalLayout_2 = QtGui.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
+        self.label_2 = QtGui.QLabel(Dialog)
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.horizontalLayout_2.addWidget(self.label_2)
+        self.lineEdit_2 = QtGui.QLineEdit(Dialog)
+        self.lineEdit_2.setObjectName(_fromUtf8("lineEdit_2"))
+        self.horizontalLayout_2.addWidget(self.lineEdit_2)
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.horizontalLayout = QtGui.QHBoxLayout()
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.label = QtGui.QLabel(Dialog)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.horizontalLayout.addWidget(self.label)
+        self.lineEdit = QtGui.QLineEdit(Dialog)
+        self.lineEdit.setObjectName(_fromUtf8("lineEdit"))
+        self.horizontalLayout.addWidget(self.lineEdit)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
+        self.horizontalLayout_3 = QtGui.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(_fromUtf8("horizontalLayout_3"))
+        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_3.addItem(spacerItem)
+        self.pushButton_2 = QtGui.QPushButton(Dialog)
+        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        self.horizontalLayout_3.addWidget(self.pushButton_2)
+        self.pushButton = QtGui.QPushButton(Dialog)
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.horizontalLayout_3.addWidget(self.pushButton)
+        self.gridLayout.addLayout(self.horizontalLayout_3, 1, 0, 1, 1)
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog", None))
+        self.label_2.setText(_translate("Dialog", "From", None))
+        self.label.setText(_translate("Dialog", "To", None))
+        self.pushButton_2.setText(_translate("Dialog", "Cancel", None))
+        self.pushButton.setText(_translate("Dialog", "Ok", None))
+
+
 class connectionBuilder(QtGui.QDialog):## This is used to set connection between two different dialogs
 	def __init__(self,parent,logger):
 
@@ -297,7 +378,7 @@ class connectionBuilder(QtGui.QDialog):## This is used to set connection between
 		self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)		
 		self.logger=logger
 		self.parent=parent
-		self.UI=SettingConnection.Ui_Dialog()
+		self.UI=ConnectionBuilder_Ui_Dialog()
 		self.UI.setupUi(self)
 		self.connection=None
 		self.fromComponent=None
@@ -317,7 +398,7 @@ class connectionBuilder(QtGui.QDialog):## This is used to set connection between
 		self.connection.toComponent=component
 		self.toComponent=component
 	def SaveConnection(self):
-		self.toComponent.dependence.append(self.fromComponent.alias)
+		self.toComponent.dependences.append(self.fromComponent.alias)
 		self.toComponent.asEnd.append(self.connection)
 		self.fromComponent.asBeg.append(self.connection)
 		self.parent.NetworkScene.addItem(self.connection)
@@ -332,21 +413,128 @@ class connectionBuilder(QtGui.QDialog):## This is used to set connection between
 		self.close()
 		self.UI.lineEdit.setText("")
 		self.UI.lineEdit_2.setText("")
+
+
+##
+#This will takes care of selecting the rcmanger tool settings..The first class is about UI.second is main thing..
+##
+
+class NetworkSettings_Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.resize(561, 263)
+        self.gridLayout = QtGui.QGridLayout(Dialog)
+        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+        self.verticalLayout = QtGui.QVBoxLayout()
+        self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
+        self.horizontalLayout_4 = QtGui.QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(_fromUtf8("horizontalLayout_4"))
+        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
+        self.horizontalLayout_4.addItem(spacerItem)
+        self.pushButton_2 = QtGui.QPushButton(Dialog)
+        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        self.horizontalLayout_4.addWidget(self.pushButton_2)
+        self.pushButton_3 = QtGui.QPushButton(Dialog)
+        self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
+        self.horizontalLayout_4.addWidget(self.pushButton_3)
+        self.pushButton = QtGui.QPushButton(Dialog)
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.horizontalLayout_4.addWidget(self.pushButton)
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
+        self.gridLayout.addLayout(self.verticalLayout, 1, 0, 1, 1)
+        self.formLayout = QtGui.QFormLayout()
+        self.formLayout.setFieldGrowthPolicy(QtGui.QFormLayout.AllNonFixedFieldsGrow)
+        self.formLayout.setObjectName(_fromUtf8("formLayout"))
+        self.label = QtGui.QLabel(Dialog)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.formLayout.setWidget(0, QtGui.QFormLayout.LabelRole, self.label)
+        self.doubleSpinBox = QtGui.QDoubleSpinBox(Dialog)
+        self.doubleSpinBox.setObjectName(_fromUtf8("doubleSpinBox"))
+        self.formLayout.setWidget(0, QtGui.QFormLayout.FieldRole, self.doubleSpinBox)
+        self.label_2 = QtGui.QLabel(Dialog)
+        self.label_2.setObjectName(_fromUtf8("label_2"))
+        self.formLayout.setWidget(1, QtGui.QFormLayout.LabelRole, self.label_2)
+        self.doubleSpinBox_2 = QtGui.QDoubleSpinBox(Dialog)
+        self.doubleSpinBox_2.setObjectName(_fromUtf8("doubleSpinBox_2"))
+        self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.doubleSpinBox_2)
+        self.label_3 = QtGui.QLabel(Dialog)
+        self.label_3.setObjectName(_fromUtf8("label_3"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.LabelRole, self.label_3)
+        self.doubleSpinBox_3 = QtGui.QDoubleSpinBox(Dialog)
+        self.doubleSpinBox_3.setObjectName(_fromUtf8("doubleSpinBox_3"))
+        self.formLayout.setWidget(2, QtGui.QFormLayout.FieldRole, self.doubleSpinBox_3)
+        self.label_4 = QtGui.QLabel(Dialog)
+        self.label_4.setObjectName(_fromUtf8("label_4"))
+        self.formLayout.setWidget(3, QtGui.QFormLayout.LabelRole, self.label_4)
+        self.doubleSpinBox_4 = QtGui.QDoubleSpinBox(Dialog)
+        self.doubleSpinBox_4.setObjectName(_fromUtf8("doubleSpinBox_4"))
+        self.formLayout.setWidget(3, QtGui.QFormLayout.FieldRole, self.doubleSpinBox_4)
+        spacerItem1 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        self.formLayout.setItem(4, QtGui.QFormLayout.FieldRole, spacerItem1)
+        self.gridLayout.addLayout(self.formLayout, 0, 0, 1, 1)
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog", None))
+        self.pushButton_2.setText(_translate("Dialog", "Apply", None))
+        self.pushButton_3.setText(_translate("Dialog", "Cancel", None))
+        self.pushButton.setText(_translate("Dialog", "OK", None))
+        self.label.setText(_translate("Dialog", "Connection Modularity", None))
+        self.label_2.setText(_translate("Dialog", "Node Modularity", None))
+        self.label_3.setText(_translate("Dialog", "X-Multiplication factor", None))
+        self.label_4.setText(_translate("Dialog", "Y-Multiplication factor", None))
+		
 class NetworkSettings(QtGui.QDialog):#This will show a dialog window for selecting the rcmanager tool settings
 	def __init__(self,parent=None):
 		QtGui.QDialog.__init__(self)
 		self.parent=parent
-		self.UI=networkSettingUI.Ui_Dialog()			
+		self.UI=NetworkSettings_Ui_Dialog()			
 		self.UI.setupUi(self)
 		self.setting=None
 	def setData(self,setting):
 		self.setting=setting
 
+##
+#This will take care of the Save warning and stuff to avoid accidental quiting without saving ..First class is for UI..Second one takes care of the main stuffs..
+##
+
+class SaveWarning_Ui_Dialog(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.resize(493, 87)
+        self.horizontalLayout = QtGui.QHBoxLayout(Dialog)
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.pushButton = QtGui.QPushButton(Dialog)
+        self.pushButton.setObjectName(_fromUtf8("pushButton"))
+        self.horizontalLayout.addWidget(self.pushButton)
+        self.pushButton_2 = QtGui.QPushButton(Dialog)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8("share/rcmanager/1465394415_floppy.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.pushButton_2.setIcon(icon)
+        self.pushButton_2.setObjectName(_fromUtf8("pushButton_2"))
+        self.horizontalLayout.addWidget(self.pushButton_2)
+        self.pushButton_3 = QtGui.QPushButton(Dialog)
+        self.pushButton_3.setAutoDefault(True)
+        self.pushButton_3.setDefault(True)
+        self.pushButton_3.setObjectName(_fromUtf8("pushButton_3"))
+        self.horizontalLayout.addWidget(self.pushButton_3)
+
+        self.retranslateUi(Dialog)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog", None))
+        self.pushButton.setText(_translate("Dialog", "Don\'t Save", None))
+        self.pushButton_2.setText(_translate("Dialog", "Save", None))
+        self.pushButton_3.setText(_translate("Dialog", "Cancel", None))
+
 class SaveWarningDialog(QtGui.QDialog):#To be used as a warning window while deleting existing tree without saving
 	def __init__(self,parent=None):
 		QtGui.QDialog.__init__(self)
 		self.parent=parent
-		self.UI=SaveWarning.Ui_Dialog()
+		self.UI=SaveWarning_Ui_Dialog()
 		self.UI.setupUi(self)
 		self.connect(self.UI.pushButton_2,QtCore.SIGNAL("clicked()"),self.save)
 		self.connect(self.UI.pushButton,QtCore.SIGNAL("clicked()"),self.dontSave)
@@ -365,6 +553,10 @@ class SaveWarningDialog(QtGui.QDialog):#To be used as a warning window while del
 	def cancel(self):
 		self.close()
 		self.Status="C"
+
+##
+#This will takes care about the code editing part of the software
+##
 
 class CodeEditor(Qsci.QsciScintilla):#For the dynamic code editing (Widget )
 	def __init__(self,parent=None):
@@ -406,6 +598,11 @@ class CodeEditor(Qsci.QsciScintilla):#For the dynamic code editing (Widget )
 		else:
 			self.markerAdd(nline, self.ARROW_MARKER_NUM)
 
+##
+#This is the graphics Item which represent a component
+##
+
+
 class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 	"""docstring for ClassName"""
 	def __init__(self, view=None,Alias="Component",parent=None):
@@ -446,6 +643,8 @@ class VisualNode(QtGui.QGraphicsItem):##Visual Node GraphicsItem
 	def mouseReleaseEvent(self,event):
 		QtGui.QGraphicsItem.mouseReleaseEvent(self,event)
 		self.updateforDrag(	)
+		self.parent.x=self.x()
+		self.parent.y=self.y()
 	def hoverEnterEvent(self,event):
 		#print self.parent.mainWindow.graphTree
 		pos=self.parent.mainWindow.graphTree.mapFromScene(self.mapToScene(QtCore.QPointF()))
@@ -572,6 +771,12 @@ def findWhichPorts(fromComponent,toComponent):#This will select out of the 4 por
 		elif angle>225 and angle <=315:
 			return "U","D"
 
+
+
+##
+#This is another graphics Item which represents the connection between The componentts
+##
+
 class NodeConnection(QtGui.QGraphicsItem):
 	def __init__(self):
 		QtGui.QGraphicsItem.__init__(self)
@@ -624,6 +829,11 @@ class NodeConnection(QtGui.QGraphicsItem):
 		
 	def hoverEnterEvent(self,Event):#Unfinished
 		print "Mouse Hovering in connection from :" +self.fromComponent+" to :" +self.toPoint
+
+
+##
+#This class will monitor the components whether they are up or down..
+##
 				
 class ComponentChecker(threading.Thread):#This will check the status of components
 	def __init__(self,component,logger=None):	
@@ -700,6 +910,11 @@ class ComponentChecker(threading.Thread):#This will check the status of componen
 		self.component.status=not self.alive
 		self.component.graphicsItem.update()
 
+##
+#This widget is used to display the details of a component when hovering over the nodes
+##
+
+
 class ShowItemDetails(QtGui.QWidget):##This contains the GUI and internal process regarding the controlling of the a particular component.
 	def __init__(self,parent=None):
 		QtGui.QWidget.__init__(self)
@@ -719,9 +934,14 @@ class ShowItemDetails(QtGui.QWidget):##This contains the GUI and internal proces
 		self.setGeometry(x,y,150,150)
 	  	self.isShowing=True
 	  	self.show()
-#		
-# Component information container class.
+	def mousePressEvent(self,event):
+		self.hide()
+
+
+#	
+# Component information container class.This is the class which represents a component..the graphics object,directory object,monitoring thread everything is contained in the class
 #
+
 class CompInfo(QtCore.QObject):##This contain the general Information about the Components which is read from the files and created
 	def __init__(self,view=None,mainWindow=None):
 
@@ -773,6 +993,10 @@ class CompInfo(QtCore.QObject):##This contain the general Information about the 
 		self.graphicsItem.Alias=self.alias
 
 
+##
+#This is the inherited GraphicsView Class on which the graphicsScene is displayed
+##
+
 class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to draw the graphtree 
 	def __init__(self,parent,mainclass):
 		self.viewportAnchor=QtGui.QGraphicsView.AnchorUnderMouse
@@ -812,10 +1036,19 @@ class  ComponentTree(QtGui.QGraphicsView):	##The widget on which we are going to
 			QtGui.QGraphicsView.mousePressEvent(self,event)
 
 
+##
+#This is the inherited GraphicsScene on which The items are drawn
+##
+
 class ComponentScene(QtGui.QGraphicsScene):#The scene onwhich we are drawing the graph
 	def __init__(self,parent=None):
 		QtGui.QGraphicsScene.__init__(self)
 		self.parent=parent
+
+
+##
+#This is the Buttons shown on the right side of the tool..
+##
 			
 class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most side of the software
 
@@ -846,7 +1079,9 @@ class DirectoryItem(QtGui.QPushButton):#This will be listed on the right most si
 		if index==1 or index==2:
 			self.parent.CommonProxy.setVisibility(False)
 
-##This class will communicate with the common behavior component
+##
+#This class will communicate with the common behavior component..On construction
+##
 class commonBehaviorComponent(threading.Thread):
 	def __init__(self,parent):
 		threading.Thread.__init__(self)
@@ -883,6 +1118,10 @@ class commonBehaviorComponent(threading.Thread):
 		self.visible = status
 		#print "visible change"+str(status)
 		self.mutex.unlock()
+
+##
+#This is the menu which will appear when right click on a component 
+##
 	
 class ComponentMenu(QtGui.QMenu):
 	def  __init__(self,parent):
@@ -917,7 +1156,9 @@ class ComponentMenu(QtGui.QMenu):
 		self.currentComponent=component
 
 
-
+##
+#This is the menu which appears when right click on the background of the graphics Scene
+##
 
 class BackgroundMenu(QtGui.QMenu):
 	def __init__(self,parent):
@@ -939,9 +1180,25 @@ class BackgroundMenu(QtGui.QMenu):
 	def setPos(self,pos):
 		self.pos=pos
 
+
+##
+#This is the container class to contain values about the network..It also contains the network groups 
+##
+#
+
 class NetworkValues():##This will contain Values about the network
 	def __init__(self):
+		self.spring_length=100
+		self.field_force_multiplier=20000
+		self.hookes_constant=.07
+		self.time_elapsed2=3
+		self.roza=.8
 		self.Groups=[]
+
+
+##
+#Below are the functions regarding reading from file writing to file and stuffs like that.
+##
 
 def getStringFromFile(path):##This is the first function to be called for reading configurations for a xml file
 	try:
@@ -1046,13 +1303,13 @@ def parseNode(node, components,generalSettings,logger):#To get the properties of
 				elif child.name == "xpos":
 					x=parseSingleValue(child, 'value')
 					try :
-						comp.x=float(x)*4
+						comp.x=float(x)
 					except :
 						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
 				elif child.name == "ypos":
-					y = float(parseSingleValue(child, 'value'))*4					
+					y = float(parseSingleValue(child, 'value'))					
 					try :
-						comp.y=float(y)*4
+						comp.y=float(y)
 					except :
 						logger.logData("Error in Reading Position Value of "+comp.alias,"R")
 				

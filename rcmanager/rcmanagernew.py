@@ -79,6 +79,8 @@ class MainClass(QtGui.QMainWindow):
 		#To track the changes in the network both functionaly and visually
 		self.HadChanged=False
 		
+		self.simulatorTimer=QtCore.QTimer()
+
 		self.connectionBuilder=rcmanagerConfignew.connectionBuilder(self,self.Logger)##This will take care of connection building between components
 
 		
@@ -103,6 +105,7 @@ class MainClass(QtGui.QMainWindow):
 		#self.UI.toolButton_6.setMouseTracking(True)
 		
 	def setupActions(self):##To setUp connection like saving,opening,etc
+		self.connect(self.simulatorTimer,QtCore.SIGNAL("timeout()"),self.simulate)
 		self.connect(self.UI.toolButton,QtCore.SIGNAL("hovered()"),self.hoverAddComponent)
 		self.connect(self.UI.toolButton_9,QtCore.SIGNAL("hovered()"),self.hoverXmlSettings)
 		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("hovered()"),self.hoverPrintDefaultNode)
@@ -361,9 +364,60 @@ class MainClass(QtGui.QMainWindow):
 	def editorSettings(self):##To edit the editors settins:Unfinshed
 		print "Editor Settings"	
 	def simulatorOff(self):	#To switch Off the simulator::Unfiunished
-		print "Simulator is Off"
-	def simulatorOn(self):#To switch ON simulator::Unfinished
-		print "Simulator is On"
+		self.Logger.logData("Simulator Ended")
+		self.simulatorTimer.stop()
+	def simulatorOn(self):
+		self.Logger.logData("Simulator Started")
+		self.simulatorTimer.start(300)
+	def simulate(self):#To switch ON simulator::Unfinished
+		
+		for iterr in self.componentList:
+			force_x = force_y = 0.
+			for iterr2 in self.componentList:
+				if iterr.alias == iterr2.alias: continue
+				ix = iterr.x - iterr2.x
+				iy = iterr.y - iterr2.y
+				
+				while ix == 0 and iy == 0:
+					iterr.x = iterr.x + random.uniform(  -10, 10)
+					iterr2.x = iterr2.x + random.uniform(-10, 10)
+					iterr.y = iterr.y + random.uniform(  -10, 10)
+					iterr2.y = iterr2.y + random.uniform(-10, 10)
+					ix = iterr.x - iterr2.x
+					iy = iterr.y - iterr2.y
+
+				angle = math.atan2(iy, ix)
+				dist2 = ((abs((iy*iy) + (ix*ix))) ** 0.5) ** 2.
+				if dist2 < self.networkSettings.spring_length: dist2 = self.networkSettings.spring_length
+				force = self.networkSettings.field_force_multiplier / dist2
+				force_x += force * math.cos(angle)
+				force_y += force * math.sin(angle)
+
+				if iterr2.alias in iterr.dependences or iterr.alias in iterr2.dependences:
+					ix = iterr.x - iterr2.x
+					iy = iterr.y - iterr2.y
+					angle = math.atan2(iy, ix)
+					force = math.sqrt(abs((iy*iy) + (ix*ix)))      # force means distance actually
+					#if force <= self.spring_length: continue       # "
+					force -= self.networkSettings.spring_length                    # force means spring strain now
+					force = force * self.networkSettings.hookes_constant           # now force means force :-)
+					force_x -= force*math.cos(angle)
+					force_y -= force*math.sin(angle)
+
+			iterr.vel_x = (iterr.vel_x + (force_x*self.networkSettings.time_elapsed2))*self.networkSettings.roza
+			iterr.vel_y = (iterr.vel_y + (force_y*self.networkSettings.time_elapsed2))*self.networkSettings.roza
+
+		# Update positions
+		for iterr in self.componentList:
+			iterr.x += iterr.vel_x
+			iterr.y += iterr.vel_y
+		
+		for iterr in self.componentList:
+			#print "updating "+iterr.alias
+			iterr.graphicsItem.setPos(QtCore.QPointF(iterr.x,iterr.y))
+			iterr.graphicsItem.updateforDrag()
+
+
 	def rcmanagerSetting(self):#To edit the setting of the entire rcmanager settings tool
 		pass
 	def exitRcmanager(self):##To exit the tool after doing all required process
