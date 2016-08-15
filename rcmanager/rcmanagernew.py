@@ -106,13 +106,13 @@ class MainClass(QtGui.QMainWindow):
 		
 	def setupActions(self):##To setUp connection like saving,opening,etc
 		self.connect(self.simulatorTimer,QtCore.SIGNAL("timeout()"),self.simulate)
-		self.connect(self.UI.toolButton,QtCore.SIGNAL("hovered()"),self.hoverAddComponent)
-		self.connect(self.UI.toolButton_9,QtCore.SIGNAL("hovered()"),self.hoverXmlSettings)
-		self.connect(self.UI.toolButton_5,QtCore.SIGNAL("hovered()"),self.hoverPrintDefaultNode)
-		self.connect(self.UI.toolButton_4,QtCore.SIGNAL("hovered()"),self.hoverPrintDefaultSettings)
-		self.connect(self.UI.toolButton_3,QtCore.SIGNAL("hovered()"),self.hoverRefreshFromXml)
-		self.connect(self.UI.toolButton_10,QtCore.SIGNAL("hovered()"),self.hoverNetworkTreeSettings)
-		self.connect(self.UI.toolButton_6,QtCore.SIGNAL("hovered()"),self.hoverRefreshFromTree)
+		#self.connect(self.UI.toolButton,QtCore.SIGNAL("hovered()"),self.hoverAddComponent)
+		#self.connect(self.UI.toolButton_9,QtCore.SIGNAL("hovered()"),self.hoverXmlSettings)
+		#self.connect(self.UI.toolButton_5,QtCore.SIGNAL("hovered()"),self.hoverPrintDefaultNode)
+		#self.connect(self.UI.toolButton_4,QtCore.SIGNAL("hovered()"),self.hoverPrintDefaultSettings)
+		#self.connect(self.UI.toolButton_3,QtCore.SIGNAL("hovered()"),self.hoverRefreshFromXml)
+		#self.connect(self.UI.toolButton_10,QtCore.SIGNAL("hovered()"),self.hoverNetworkTreeSettings)
+		#self.connect(self.UI.toolButton_6,QtCore.SIGNAL("hovered()"),self.hoverRefreshFromTree)
 		self.connect(self.UI.tabWidget,QtCore.SIGNAL("currentChanged(int)"),self.tabIndexChanged)
 		self.connect(self.UI.actionSave,QtCore.SIGNAL("triggered(bool)"),self.saveXmlFile)
 		self.connect(self.UI.actionOpen,QtCore.SIGNAL("triggered(bool)"),self.openXmlFile)
@@ -238,6 +238,7 @@ class MainClass(QtGui.QMainWindow):
 			self.Logger.logData("Error while updating tree from Code::"+str(e), "R")
 		else:
 			self.removeAllComponents()
+			self.NetworkScene.clear()
 			self.networkSettings=Settings
 			self.componentList=List
 			try :
@@ -417,7 +418,14 @@ class MainClass(QtGui.QMainWindow):
 			iterr.graphicsItem.setPos(QtCore.QPointF(iterr.x,iterr.y))
 			iterr.graphicsItem.updateforDrag()
 
+	def simulate2(self):##Another Simulation algorithum Working on that..
+		min=self.componentList[0]
+		for iterr in self.componentList:
+			if iterr.x<min.x:
+				min=iterr
 
+				
+				
 	def rcmanagerSetting(self):#To edit the setting of the entire rcmanager settings tool
 		pass
 	def exitRcmanager(self):##To exit the tool after doing all required process

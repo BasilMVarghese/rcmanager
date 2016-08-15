@@ -1269,10 +1269,14 @@ def parseGeneralInformation(node, generalSettings,logger): ##Takes care of readi
 						logger.logData("Couldn Read group "+str(e),"R")
 					else:
 						logger.logData("Read the group ::"+ group.groupName +" Information")
+				elif child.name=="simulation":
+					generalSettings.spring_length=float(parseSingleValue(child,"springlength"))
+					generalSettings.field_force_multiplier=float(parseSingleValue(child,"fieldforce"))
+					generalSettings.hookes_constant=float(parseSingleValue(child,"hookes"))
+					generalSettings.roza=1- float(parseSingleValue(child,"friction"))
 			child=child.next
 
 		logger.logData("General Information Successfully read")
-
 
 def checkForMoreProperties(node):
 	if node.properties != None: print 'WARNING: Attributes unexpected: ' + str(node.properties)
@@ -1377,6 +1381,7 @@ def getXmlFromNetwork(NetworkSettings, components,logger):
 	for x in NetworkSettings.Groups:
 		string=string+'\t\t<group name="'+x.groupName+'" iconfile="'+x.groupIconFilePath+'" />\n'
 
+	string=string+'\t\t<simulation hookes="'+str(NetworkSettings.hookes_constant)+'" friction="'+str(1-NetworkSettings.roza)+'" springlength="'+str(NetworkSettings.spring_length)+'" fieldforce="'+str(NetworkSettings.field_force_multiplier)+'"/>\n'
 	string=string+'\n\t</generalInformation>\n'
 	
 	for comp in components:
